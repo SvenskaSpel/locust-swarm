@@ -6,13 +6,26 @@ Swarm supports [locust-extensions](https://github.com/SvenskaSpel/locust-extensi
 
 ## Installation
 
-```pip install locust-swarm```
+Install from package repository
+
+```
+pip install locust-swarm
+```
+
+Install from source
+
+```
+git clone <this repo>
+pip install -e locust-swarm/
+```
 
 Swarm uses SSH to launch remote processes and SSH tunnels for communication, so your first step should be to ensure you can access the slaves over ssh.
 
 ## Detailed help
 
-```swarm -h```
+```
+swarm -h
+```
 
 ## License
 
