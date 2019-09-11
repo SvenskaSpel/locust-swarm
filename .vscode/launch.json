@@ -1,0 +1,49 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "swarm",
+            "type": "python",
+            "request": "launch",
+            "program": "/usr/local/bin/swarm",
+            "console": "integratedTerminal",
+            "args": [
+                "-t",
+                "10",
+                "-c",
+                "2",
+                "-L",
+                "DEBUG",
+                "-H",
+                "http://example.com",
+                "--loadgens",
+                "2"
+            ],
+            "cwd": "../locust-extensions/examples",
+            "env": {
+                "LOCUST_RPS": "1",
+                "LC_ALL": "en_US.UTF-8"
+            }
+        },
+        {
+            "name": "swarm jmeter",
+            "type": "python",
+            "request": "launch",
+            "program": "/usr/local/bin/swarm",
+            "console": "integratedTerminal",
+            "args": [
+                "--jmeter",
+                "-Jhost=http://example.com",
+                "-L",
+                "DEBUG"
+            ],
+            "cwd": "/directory/of/jmxfile/and/load_profile/",
+            "env": {
+                "LC_ALL": "en_US.UTF-8"
+            }
+        }
+    ]
+}
