@@ -34,10 +34,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        "locustio",
-        "locust-extensions@git+ssh://git@git.svenskaspel.se/test/locust-extensions",
-        "psutil",
-    ],
+    install_requires=["locustio", "locust-extensions", "psutil"],
     entry_points={"console_scripts": ["swarm = locust_swarm.main:main"]},
 )
