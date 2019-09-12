@@ -34,6 +34,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["locustio", "locust-extensions", "psutil"],
+    install_requires=["locust-plugins", "psutil"],
     entry_points={"console_scripts": ["swarm = locust_swarm.main:main"]},
 )
