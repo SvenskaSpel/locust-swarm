@@ -2,3 +2,5 @@ env
 __pycache__
 pip-wheel-metadata
 locust_swarm.egg-info
+build
+dist
