@@ -11,7 +11,7 @@ import signal
 import socket
 import re
 import getpass
-import locust_extensions
+import locust_plugins
 
 
 def main():
@@ -185,7 +185,7 @@ def main():
             check_output(f"rsync -qr * {slave}:")
 
             # upload locust-extensions
-            check_output(f"rsync -qr {locust_extensions.__path__[0]} {slave}:")
+            check_output(f"rsync -qr {locust_plugins.__path__[0]} {slave}:")
 
             port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
 
