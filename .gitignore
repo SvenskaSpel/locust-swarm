@@ -4,3 +4,4 @@ pip-wheel-metadata
 locust_swarm.egg-info
 build
 dist
+jmeter.log
