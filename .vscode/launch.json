@@ -22,7 +22,7 @@
                 "--loadgens",
                 "2"
             ],
-            "cwd": "../locust-extensions/examples",
+            "cwd": "../locust-plugins/examples",
             "env": {
                 "LOCUST_RPS": "1",
                 "LC_ALL": "en_US.UTF-8"
