@@ -258,7 +258,7 @@ def is_port_in_use(_port):
 
 def check_output(command):
     logging.debug(command)
-    logging.debug(subprocess.check_output(command, shell=True).rstrip().decode())
+    logging.debug(subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).rstrip().decode())
 
 
 def check_proc(process):
