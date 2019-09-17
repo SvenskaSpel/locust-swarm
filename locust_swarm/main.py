@@ -128,11 +128,15 @@ def main():
 
         time.sleep(3)
         print("All jmeter slaves started")
-        check_output(f"scp -q {{{testplan},load_profile.csv}} {os.environ['JMETER_MASTER']}:")
+        check_output(
+            f"scp -q {testplan} {os.environ['JMETER_MASTER']}: && scp -q load_profile.csv {os.environ['JMETER_MASTER']}:"
+        )
         log_folder = f"logs/{start_time.strftime('%Y-%m-%d-%H.%M')}"
         check_output(f"ssh -q {os.environ['JMETER_MASTER']} mkdir -p {log_folder}")
         # upload an extra copy of test plan & load profile to log folder, just for keeping track of previous runs:
-        check_output(f"scp -q {{{testplan},load_profile.csv}} {os.environ['JMETER_MASTER']}:{log_folder}")
+        check_output(
+            f"scp -q {testplan} {os.environ['JMETER_MASTER']}:{log_folder} && scp -q load_profile.csv {os.environ['JMETER_MASTER']}:{log_folder}"
+        )
 
     else:
         os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
