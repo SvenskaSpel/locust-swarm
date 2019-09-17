@@ -10,7 +10,6 @@ import atexit
 import signal
 import socket
 import re
-import getpass
 import locust_plugins
 
 
@@ -75,10 +74,12 @@ def main():
     if args.loglevel:
         logging.getLogger().setLevel(args.loglevel.upper())
 
-    # test that we can ssh to load gens at all
-    test_command = f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} echo hello"
     try:
-        subprocess.check_output(test_command, shell=True)
+        subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} true", shell=True)
+        if args.jmeter:
+            subprocess.check_output(
+                f"ssh -o LogLevel=error -o BatchMode=yes {os.environ['JMETER_MASTER']} true", shell=True
+            )
     except Exception:
         logging.error(
             "Error ssh:ing to load generators. Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
@@ -106,34 +107,32 @@ def main():
         else:
             master_command = [
                 "ssh",
+                "-q",
                 os.environ["JMETER_MASTER"],
                 f"nohup bash -c 'jmeter/bin/jmeter -n -R {f':{port},'.join(slaves)}:{port} -Jjmeterengine.nongui.port=0 {jmeter_params}'",
             ]
         try:
-            check_output("ssh pamlast03 'pgrep -c -u $UID java'")  # throws exception if master not running
-            print("Warning: A test was already running, stopping it now")
-            # ssh pamlast03 echo -n "Shutdown" >/dev/udp/localhost/5555 && sleep 5 && ssh pamlast03 echo -n "StopTestNow" >/dev/udp/localhost/5555 && sleep 5 || true  #temporarily disabled because it doesnt seem to work - also it is dangerous because it might shut down somebody else's jmeter...
-            check_output("ssh pamlast03 killall java &>/dev/null || true")
+            check_output(f"ssh -q {os.environ['JMETER_MASTER']} pgrep -c -u \\$USER java")
+            raise Exception("Master was busy running another jmeter test. Bailing out!")
+            # check_output(f"ssh -q {os.environ['JMETER_MASTER']} pkill -9 -u \\$USER java &>/dev/null || true")
         except subprocess.CalledProcessError:
-            pass  # there was no process running
+            logging.debug("There was no jmeter master running, great.")
 
         for slave in slaves:
-            check_output(f"scp load_profile.csv {slave}:")
+            check_output(f"scp -q load_profile.csv {slave}:")
             # this should not really be needed, but we do it to be extra sure nothing else is running
-            check_output(f"ssh {slave} killall java ruby &>/dev/null || true")
-            cmd = f'''ssh {slave} "nohup bash -lc 'jmeter/bin/jmeter-server -Jserver={slave} -Jjava.server.rmi.ssl.disable=true -Jserver_port={port} -Jsample_variables=server {" ".join(unrecognized_args)}'"'''
+            check_output(f"ssh -q {slave} pkill -9 -u \\$USER java || true")
+            cmd = f'''ssh -q {slave} "nohup bash -lc 'jmeter/bin/jmeter-server -Jserver={slave} -Jjava.server.rmi.ssl.disable=true -Jserver_port={port} -Jsample_variables=server {" ".join(unrecognized_args)}'"'''
             logging.debug("Slave: " + cmd)
             slave_procs.append(subprocess.Popen(cmd, shell=True))
 
         time.sleep(3)
         print("All jmeter slaves started")
-
-        check_output(f"scp {{{testplan},load_profile.csv}} pamlast03:")  # these files are used at runtime
+        check_output(f"scp -q {{{testplan},load_profile.csv}} {os.environ['JMETER_MASTER']}:")
         log_folder = f"logs/{start_time.strftime('%Y-%m-%d-%H.%M')}"
-        check_output(f"ssh pamlast03 mkdir -p {log_folder}")
-        check_output(
-            f"scp {{{testplan},load_profile.csv}} pamlast03:{log_folder}"
-        )  # these files are just for logging/history purposes
+        check_output(f"ssh -q {os.environ['JMETER_MASTER']} mkdir -p {log_folder}")
+        # upload an extra copy of test plan & load profile to log folder, just for keeping track of previous runs:
+        check_output(f"scp -q {{{testplan},load_profile.csv}} {os.environ['JMETER_MASTER']}:{log_folder}")
 
     else:
         os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
@@ -259,7 +258,7 @@ def is_port_in_use(_port):
 
 def check_output(command):
     logging.debug(command)
-    subprocess.check_output(command, shell=True)
+    logging.debug(subprocess.check_output(command, shell=True).rstrip().decode())
 
 
 def check_proc(process):
@@ -287,7 +286,7 @@ def check_and_lock_server(server):
     # a server is considered busy if it is either running a locust/jmeter process or
     # is "locked" by a sleep command with somewhat unique syntax.
     # the regex uses a character class ([.]) to avoid matching with the pgrep command itself
-    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u {getpass.getuser()} -f '^sleep 1 19|[l]ocust --slave|[j]meter/bin/ApacheJMeter.jar' && echo busy || (echo available && sleep 1 19)\""
+    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --slave|[j]meter/bin/ApacheJMeter.jar' && echo busy || (echo available && sleep 1 19)\""
 
     logging.debug(check_command)
     p = subprocess.Popen(check_command, stdout=subprocess.PIPE, shell=True)
@@ -318,14 +317,11 @@ def cleanup(slaves, args):  # pylint: disable=W0612
             pass
     psutil.wait_procs(procs, timeout=3)
     for server in slaves:
-        # check_output(f"pkill -9 -f 'ssh -q -R {port}:localhost:{port} -R {int(port) + 1}:localhost:{int(port) + 1} {server}' || true")
-        # check_output(f"pkill -9 -f 'ssh {server} locust --slave --no-web -f' || true")
         if args.jmeter:
-            check_output("ssh pamlast03 killall java &>/dev/null || true")
-            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f jmeter/bin/ApacheJMeter.jar' || true")
+            check_output(f"ssh -q {server} pkill -9 -u \\$USER -f jmeter/bin/ApacheJMeter.jar || true")
         else:
-            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --slave\"' || true")
-        logging.debug("cleanup complete")
+            check_output(f'ssh -q {server} pkill -9 -u \\$USER -f "locust --slave"\' || true')
+    logging.debug("cleanup complete")
 
 
 # ensure atexit handler gets called even if we get a signal (typically when terminating the debugger)
