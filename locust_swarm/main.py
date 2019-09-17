@@ -262,7 +262,11 @@ def is_port_in_use(_port):
 
 def check_output(command):
     logging.debug(command)
-    logging.debug(subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).rstrip().decode())
+    try:
+        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        logging.error(e.output.decode().strip())
+        raise
 
 
 def check_proc(process):
