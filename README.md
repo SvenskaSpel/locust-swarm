@@ -2,7 +2,7 @@
 
 Swarm is a tool for running locust in a distributed fashion on a set of load generator slaves. It also has basic support for jmeter.
 
-Swarm supports [locust-extensions](https://github.com/SvenskaSpel/locust-extensions), allowing you to do things like RPS limiting in a distributed setting.
+Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), allowing you to do things like RPS limiting in a distributed setting.
 
 ## Installation
 
