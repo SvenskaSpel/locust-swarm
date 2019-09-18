@@ -328,7 +328,7 @@ def cleanup(slaves, args):  # pylint: disable=W0612
         if args.jmeter:
             check_output(f"ssh -q {server} pkill -9 -u \\$USER -f jmeter/bin/ApacheJMeter.jar || true")
         else:
-            check_output(f'ssh -q {server} pkill -9 -u \\$USER -f "locust --slave"\' || true')
+            check_output(f'ssh -q {server} pkill -9 -u \\$USER -f "locust --slave" || true')
     logging.debug("cleanup complete")
 
 
