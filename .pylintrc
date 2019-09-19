@@ -2,8 +2,6 @@
 max-line-length=300 # this rarely applies, because we always use black to autoformat shorter lines
 
 [BASIC]
-# only require really big functions to have docstrings. and we should never have this long functions.
-docstring-min-length=100
 # allow single letter variable names
 variable-rgx=[a-z0-9_]{1,30}$
 
