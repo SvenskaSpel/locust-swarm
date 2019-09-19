@@ -1,19 +1,21 @@
-import sys
-import psutil
-import subprocess
+import argparse
+import atexit
 import logging
 import os
-import time
-import argparse
-from datetime import datetime, timezone
-import atexit
+import re
 import signal
 import socket
-import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+import psutil
+
 import locust_plugins
 
 
-def main():
+def main():  # pylint: disable=missing-docstring
     parser = argparse.ArgumentParser(
         description="A tool for running locust/jmeter in a distributed fashion.",
         epilog="Any parameters not listed here are forwarded to locust unmodified, so go ahead and use things like -c, -r, --host, ...",
@@ -86,7 +88,7 @@ def main():
         )
         raise
 
-    signal.signal(signal.SIGTERM, sigHandler)
+    signal.signal(signal.SIGTERM, sig_handler)
 
     while is_port_in_use(port):
         port += 2
@@ -99,7 +101,7 @@ def main():
     atexit.register(cleanup, slaves, args)
 
     if args.jmeter:
-        JMETER_GRAFANA_URL = os.environ["JMETER_GRAFANA_URL"]
+        jmeter_grafana_url = os.environ["JMETER_GRAFANA_URL"]
         jmeter_params = " -t " + testplan_filename + " " + " ".join(unrecognized_args)
         if args.jmeter_gui:
             check_output("/usr/local/bin/jmeter" + jmeter_params)
@@ -248,7 +250,7 @@ def main():
             application = "All"
 
         logging.info(
-            f"Report: {JMETER_GRAFANA_URL}&var-application={application}&var-send_interval=5&from={int(master_start_time.timestamp()*1000)}&to={int((time.time())*1000)}\n"
+            f"Report: {jmeter_grafana_url}&var-application={application}&var-send_interval=5&from={int(master_start_time.timestamp()*1000)}&to={int((time.time())*1000)}\n"
         )
 
     logging.info(f"Load gen master process finished (return code {code})")
@@ -333,5 +335,5 @@ def cleanup(slaves, args):  # pylint: disable=W0612
 
 
 # ensure atexit handler gets called even if we get a signal (typically when terminating the debugger)
-def sigHandler(_signo, _frame):
+def sig_handler(_signo, _frame):
     sys.exit(0)
