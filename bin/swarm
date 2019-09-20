@@ -20,7 +20,7 @@ logging.basicConfig(
 
 parser = argparse.ArgumentParser(
     description="A tool for running locust/jmeter in a distributed fashion.",
-    epilog="Any parameters not listed here are forwarded to locust/jmeter unmodified, so go ahead and use things like -c, -r, --host, ...",
+    epilog="Any parameters not listed here are forwarded to locust/jmeter unmodified, so go ahead and use things like -c, -r, --host, ... All env vars starting with LOCUST_ will be forwarded to the slaves.",
 )
 parser.add_argument("-f", type=str, dest="testplan")
 parser.add_argument("-t", type=str, dest="run_time")
@@ -42,7 +42,9 @@ if args.jmeter_gui:
     args.loadgens = 0
 
 if args.loadgen_list is None:
-    parser.error("No loadgens specified on command line (--loadgen-list) or env var (LOADGEN_LIST)")
+    parser.error(
+        "No loadgens specified on command line (--loadgen-list) or env var (LOADGEN_LIST). Use a comma-separated list."
+    )
 
 if not args.jmeter:
     if not args.run_time:
