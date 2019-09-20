@@ -6,7 +6,7 @@ Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), 
 
 ## Installation
 
-Install from package repository
+Install from pypi
 
 ```
 pip install locust-swarm
