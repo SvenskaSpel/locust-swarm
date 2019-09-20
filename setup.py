@@ -35,5 +35,5 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=["locust-plugins", "psutil"],
-    entry_points={"console_scripts": ["swarm = locust_swarm.main:main"]},
+    scripts=["bin/swarm"],
 )
