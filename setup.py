@@ -28,7 +28,6 @@ setup(
     ],
     keywords="",
     author="Lars Holmberg",
-    author_email="lars.holmberg@svenskaspel.se",
     url="https://github.com/SvenskaSpel/locust-swarm",
     license="Apache-2.0",
     packages=find_packages(),
