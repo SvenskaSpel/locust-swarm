@@ -71,13 +71,13 @@ def check_and_lock_server(server):
 def cleanup(slaves, args):  # pylint: disable=W0612
     logging.debug("cleanup started")
     procs = psutil.Process().children()
-    # for p in procs:
-    #     logging.debug(f"killing subprocess {p}")
-    #     try:
-    #         p.kill()
-    #     except psutil.NoSuchProcess:
-    #         pass
-    # psutil.wait_procs(procs, timeout=3)
+    for p in procs:
+        logging.debug(f"killing subprocess {p}")
+        try:
+            p.kill()
+        except psutil.NoSuchProcess:
+            pass
+    psutil.wait_procs(procs, timeout=3)
     for server in slaves:
         if args.jmeter:
             check_output(f"ssh -q {server} bash -c 'pkill -9 -u $USER -f jmeter/bin/ApacheJMeter.jar || true '")
