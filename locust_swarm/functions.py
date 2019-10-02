@@ -23,10 +23,10 @@ def check_output(command):
         raise
 
 
-def check_proc(process):
-    if process.poll() is not None:
-        logging.error(f"{process.args} finished unexpectedly with return code {process.returncode}")
-        sys.exit(1)
+def check_proc_running(process):
+    retcode = process.poll()
+    if retcode is not None:
+        raise subprocess.CalledProcessError(retcode, process.args)
 
 
 def get_available_servers_and_lock_them(server_count, server_list):

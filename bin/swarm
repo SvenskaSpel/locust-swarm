@@ -149,6 +149,7 @@ else:
         "0",  # return zero even if there were failed samples (locust default is to return 1)
         *unrecognized_args,
     ]
+    logging.info(f"launching master: {' '.join(master_command)}")
     master_proc = subprocess.Popen(master_command)
     locust_env_vars = []
 
@@ -166,7 +167,7 @@ else:
 
     for slave in slaves:
         # fail early if master has already terminated
-        check_proc(master_proc)
+        check_proc_running(master_proc)
         slave_procs.extend(
             start_locust_processes(slave, port, args.processes_per_loadgen, locust_env_vars, testplan_filename)
         )
@@ -174,7 +175,7 @@ else:
 # check that slave procs didnt immediately terminate for some reason (like invalid parameters)
 time.sleep(2)
 for proc in slave_procs:
-    check_proc(proc)
+    check_proc_running(proc)
 
 # wait for test to complete
 while True:
@@ -185,7 +186,14 @@ while True:
         pass
     # ensure slave procs didnt die before master
     for proc in slave_procs:
-        check_proc(proc)
+        try:
+            check_proc_running(proc)
+        except subprocess.CalledProcessError as e:
+            time.sleep(0.5)
+            code = master_proc.poll()
+            if code is None:
+                logging.error("Slave proc finished unexpectedly (and master was still running)")
+                raise e
 
 if args.jmeter:
     # jmeter (unlike locust with its TimescaleListener) doesnt output a link to its report so we do it from here
