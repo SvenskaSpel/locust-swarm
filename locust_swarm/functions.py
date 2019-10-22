@@ -80,7 +80,7 @@ def cleanup(slaves, args):  # pylint: disable=W0612
     psutil.wait_procs(procs, timeout=3)
     for server in slaves:
         if args.jmeter:
-            check_output(f"ssh -q {server} bash -c 'pkill -9 -u $USER -f jmeter/bin/ApacheJMeter.jar || true '")
+            check_output(f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true")
         else:
             check_output(f"ssh -q {server} bash -c 'pkill -9 -u $USER -f \"locust --slave\" || true'")
     logging.debug("cleanup complete")
