@@ -23,6 +23,25 @@ def check_output(command):
         raise
 
 
+def check_output_multiple(list_of_commands):
+    running_procs = []
+    for command in list_of_commands:
+        logging.debug(command)
+        running_procs.append(subprocess.Popen(command, shell=True, stderr=subprocess.STDOUT))
+
+    while running_procs:
+        for proc in running_procs:
+            retcode = proc.poll()
+            if retcode is not None:  # Process finished.
+                running_procs.remove(proc)
+                if retcode != 0:
+                    raise Exception(f"Bad return code {retcode} from command: {proc.args}")
+                break
+            else:  # No process is done, wait a bit and check again.
+                time.sleep(0.1)
+                continue
+
+
 def check_proc_running(process):
     retcode = process.poll()
     if retcode is not None:
@@ -30,6 +49,7 @@ def check_proc_running(process):
 
 
 def get_available_servers_and_lock_them(server_count, server_list):
+    attempts = 0
     if server_count == 0:
         return []
     while True:
@@ -42,6 +62,9 @@ def get_available_servers_and_lock_them(server_count, server_list):
         logging.info("Didnt get enough servers. Will try again...")
         available_servers = []
         time.sleep(25)
+        attempts += 1
+        if attempts > 5:
+            raise Exception("Never found enough servers :(")
 
 
 def check_and_lock_server(server):

@@ -31,6 +31,7 @@ parser.add_argument("-L", type=str, dest="loglevel")
 parser.add_argument("--port", type=str, default="5557")
 parser.add_argument("--jmeter", action="store_true")
 parser.add_argument("--jmeter-gui", action="store_true")
+parser.add_argument("--jmeter-kill-first", action="store_true")
 
 args, unrecognized_args = parser.parse_known_args()
 
@@ -87,6 +88,12 @@ signal.signal(signal.SIGTERM, sig_handler)
 
 while is_port_in_use(port):
     port += 2
+
+if args.jmeter_kill_first:
+    check_output_multiple(
+        f"ssh -q {server} 'pkill -u $USER -f jmeter/bin/ApacheJMeter.jar' || true"
+        for server in [*server_list, jmeter_master]
+    )
 
 slaves = get_available_servers_and_lock_them(loadgens, server_list)
 slave_procs = []
