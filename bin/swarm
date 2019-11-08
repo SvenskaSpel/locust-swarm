@@ -189,11 +189,13 @@ while True:
         try:
             check_proc_running(proc)
         except subprocess.CalledProcessError as e:
-            time.sleep(0.5)
+            time.sleep(1)
             code = master_proc.poll()
             if code is None:
-                logging.error("Slave proc finished unexpectedly (and master was still running)")
-                raise e
+                logging.error(
+                    f"Slave proc finished unexpectedly with ret code {e.returncode} (and master was still running)"
+                )
+                raise
 
 if args.jmeter:
     # jmeter (unlike locust with its TimescaleListener) doesnt output a link to its report so we do it from here
