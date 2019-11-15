@@ -64,6 +64,10 @@ if args.testplan is None:
         args.testplan = "locustfile.py"
 
 testplan = args.testplan
+
+if "/" in testplan:
+    parser.error("Testplan (-f) must be a file in the current directory.")
+
 testplan_filename = os.path.split(testplan)[1]
 run_time = args.run_time
 port = int(args.port)
