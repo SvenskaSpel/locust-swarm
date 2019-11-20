@@ -77,14 +77,12 @@ slave_process_count = processes_per_loadgen * loadgens
 server_list = args.loadgen_list.split(",")
 slaves = []
 
+ssh_test_server = os.environ["JMETER_MASTER"] if args.jmeter else server_list[0]
 try:
-    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} true", shell=True)
-    if args.jmeter:
-        jmeter_master = os.environ["JMETER_MASTER"]
-        subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {jmeter_master} true", shell=True)
+    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {ssh_test_server} true", shell=True)
 except Exception:
     logging.error(
-        "Error ssh:ing to load generators. Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
+        f"Error ssh:ing to loadgen ({ssh_test_server}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
     )
     raise
 
