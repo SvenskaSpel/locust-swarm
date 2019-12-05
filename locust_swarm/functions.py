@@ -132,7 +132,7 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 "--no-web",
                 "-f",
                 testplan_filename,
-                "'",
+                "& read; kill -9 $!'",  # ensure remote process terminates if swarm is killed
             ]
         )
 
@@ -141,7 +141,7 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
         else:
             logging.debug("Slave: " + cmd)
 
-        procs.append(subprocess.Popen(cmd, shell=True))
+        procs.append(subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE))
         port_forwarding_parameters = []  # only first ssh session should do port forwarding
     return procs
 
