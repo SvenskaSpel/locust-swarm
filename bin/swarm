@@ -198,9 +198,10 @@ while True:
         try:
             check_proc_running(proc)
         except subprocess.CalledProcessError as e:
-            time.sleep(1)
-            code = master_proc.poll()
-            if code is None:
+            try:
+                code = master_proc.wait(timeout=10)
+                break
+            except subprocess.TimeoutExpired:
                 logging.error(
                     f"Slave proc finished unexpectedly with ret code {e.returncode} (and master was still running)"
                 )
