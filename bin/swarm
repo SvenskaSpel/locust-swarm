@@ -133,7 +133,7 @@ if args.jmeter:
         "ssh",
         "-q",
         jmeter_master,
-        f"nohup bash -c 'jmeter/bin/jmeter -n -R {f':{port},'.join(slaves)}:{port} -Djava.server.rmi.ssl.disable=true -Jjmeterengine.nongui.port=0 {jmeter_params}'",
+        f"nohup bash -c 'jmeter/bin/jmeter -n -R {f':{port},'.join(slaves)}:{port} -Jserver.rmi.ssl.disable=true -Jjmeterengine.nongui.port=0 {jmeter_params}'",
     ]
     logging.info(f"launching master: {' '.join(master_command)}")
     master_start_time = datetime.now()
