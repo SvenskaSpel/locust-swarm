@@ -76,7 +76,7 @@ loadgens = args.loadgens
 slave_process_count = processes_per_loadgen * loadgens
 server_list = args.loadgen_list.split(",")
 slaves = []
-
+jmeter_master = os.environ["JMETER_MASTER"]
 ssh_test_server = os.environ["JMETER_MASTER"] if args.jmeter else server_list[0]
 try:
     subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {ssh_test_server} true", shell=True)
