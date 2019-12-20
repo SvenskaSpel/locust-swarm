@@ -19,6 +19,7 @@ def check_output(command):
     try:
         subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
+        logging.error(f"command failed: {command}")
         logging.error(e.output.decode().strip())
         raise
 
