@@ -151,7 +151,7 @@ def start_jmeter_process(slave, port, unrecognized_args):
     check_output(f"scp -q load_profile.csv {slave}:")
     # this should not really be needed, but we do it to be extra sure nothing else is running
     check_output(f"ssh -q {slave} pkill -9 -u \\$USER java || true")
-    cmd = f'''ssh -q {slave} "nohup bash -lc 'jmeter/bin/jmeter-server -Jserver={slave} -Jjava.server.rmi.ssl.disable=true -Jserver_port={port} -Jsample_variables=server {" ".join(unrecognized_args)}'"'''
+    cmd = f'''ssh -q {slave} "nohup bash -lc 'jmeter/bin/jmeter-server -Jserver={slave} -Jserver.rmi.ssl.disable=true -Jserver_port={port} -Jsample_variables=server {" ".join(unrecognized_args)}'"'''
     logging.debug("Slave: " + cmd)
     return subprocess.Popen(cmd, shell=True)
 
