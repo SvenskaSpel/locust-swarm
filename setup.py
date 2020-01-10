@@ -34,6 +34,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["locust-plugins", "psutil"],
+    install_requires=["locust-plugins", "psutil", "ConfigArgParse==0.15.1"],
     scripts=["bin/swarm"],
 )
