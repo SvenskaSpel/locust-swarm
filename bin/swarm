@@ -196,6 +196,8 @@ while True:
         break
     except subprocess.TimeoutExpired:
         pass
+    except KeyboardInterrupt:
+        pass
     # ensure slave procs didnt die before master
     for proc in slave_procs:
         try:
