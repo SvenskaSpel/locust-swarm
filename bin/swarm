@@ -20,6 +20,7 @@ logging.basicConfig(
 
 parser = configargparse.ArgumentParser(
     default_config_files=["~/.locust.conf", "locust.conf"],
+    auto_env_var_prefix="LOCUST_",
     description="A tool for running locust/jmeter in a distributed fashion.",
     epilog="Any parameters not listed here are forwarded to locust/jmeter unmodified, so go ahead and use things like -c, -r, --host, ... All env vars starting with LOCUST_ will be forwarded to the slaves.",
 )
