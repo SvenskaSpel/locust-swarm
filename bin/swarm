@@ -161,13 +161,18 @@ else:
                 locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
 
     if args.remote_master:
+        ssh_command = ["ssh", "-q", args.remote_master, "'", *locust_env_vars, "nohup"]
         bind_only_localhost = []
+        ssh_command_end = ["'"]
         check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
+        check_output(f"rsync -qr * {args.remote_master}:")
     else:
         # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
         bind_only_localhost = ["--master-bind-host=127.0.0.1"]
+        ssh_command = []
 
     master_command = [
+        *ssh_command,
         "locust",
         "--master",
         "--master-bind-port",
@@ -183,10 +188,9 @@ else:
         "--exit-code-on-error",
         "0",  # return zero even if there were failed samples (locust default is to return 1)
         *unrecognized_args,
+        *ssh_command_end,
     ]
-    if args.remote_master:
-        check_output(f"rsync -qr * {args.remote_master}:")
-        master_command = ["ssh", "-q", args.remote_master, "'"] + locust_env_vars + master_command + ["'"]
+
     logging.info(f"launching master: {' '.join(master_command)}")
     master_proc = subprocess.Popen(" ".join(master_command), shell=True)
 

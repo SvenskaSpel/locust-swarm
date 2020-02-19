@@ -106,7 +106,7 @@ def cleanup(slaves, args):  # pylint: disable=W0612
         if args.jmeter:
             check_output(f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true")
         else:
-            check_output(f"ssh -q {server} bash -c 'pkill -9 -u $USER -f \"locust --slave\" || true'")
+            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --slave\"' || true")
     logging.debug("cleanup complete")
 
 
@@ -118,8 +118,12 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
 
     if not remote_master:
         port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+        ensure_remote_kill = ["& read; kill -9 $!"]
+        nohup = []
     else:
         port_forwarding_parameters = []
+        ensure_remote_kill = []
+        nohup = ["nohup"]
 
     procs = []
     for i in range(processes_per_loadgen):
@@ -135,6 +139,7 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 slave,
                 "'",
                 *locust_env_vars,
+                *nohup,
                 "locust",
                 "--slave",
                 "--master-port",
@@ -143,7 +148,8 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 "--no-web",
                 "-f",
                 testplan_filename,
-                "& read; kill -9 $!'",  # ensure remote process terminates if swarm is killed
+                *ensure_remote_kill,
+                "'",  # ensure remote process terminates if swarm is killed
             ]
         )
 
