@@ -111,8 +111,8 @@ def cleanup(slaves, args):  # pylint: disable=W0612
 
 
 def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
-    # upload test plan and any other files in the current directory
-    check_output(f"rsync -qr * {slave}:")
+    # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
+    check_output(f"rsync -qr --exclude locust.conf * {slave}:")
     # upload locust-extensions
     check_output(f"rsync -qr {locust_plugins.__path__[0]} {slave}:")
 
@@ -120,16 +120,15 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
         port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
         ensure_remote_kill = ["& read; kill -9 $!"]
         nohup = []
+        master_parameters = []
     else:
         port_forwarding_parameters = []
         ensure_remote_kill = []
         nohup = ["nohup"]
+        master_parameters = ["--master-host " + remote_master]
 
     procs = []
     for i in range(processes_per_loadgen):
-        if remote_master:
-            port_forwarding_parameters = []
-            master_parameters = ["--master-host " + remote_master]
 
         cmd = " ".join(
             [

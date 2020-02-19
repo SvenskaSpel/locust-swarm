@@ -170,6 +170,7 @@ else:
         # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
         bind_only_localhost = ["--master-bind-host=127.0.0.1"]
         ssh_command = []
+        ssh_command_end = []
 
     master_command = [
         *ssh_command,
