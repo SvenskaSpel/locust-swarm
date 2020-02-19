@@ -9,9 +9,9 @@ import psutil
 import locust_plugins
 
 
-def is_port_in_use(_port):
+def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        return sock.connect_ex(("localhost", _port)) == 0
+        return sock.connect_ex(("localhost", port)) == 0
 
 
 def check_output(command):
@@ -110,14 +110,23 @@ def cleanup(slaves, args):  # pylint: disable=W0612
     logging.debug("cleanup complete")
 
 
-def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, testplan_filename):
+def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
     # upload test plan and any other files in the current directory
     check_output(f"rsync -qr * {slave}:")
     # upload locust-extensions
     check_output(f"rsync -qr {locust_plugins.__path__[0]} {slave}:")
-    port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+
+    if not remote_master:
+        port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+    else:
+        port_forwarding_parameters = []
+
     procs = []
     for i in range(processes_per_loadgen):
+        if remote_master:
+            port_forwarding_parameters = []
+            master_parameters = ["--master-host " + remote_master]
+
         cmd = " ".join(
             [
                 "ssh",
@@ -130,6 +139,7 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 "--slave",
                 "--master-port",
                 str(port),
+                *master_parameters,
                 "--no-web",
                 "-f",
                 testplan_filename,

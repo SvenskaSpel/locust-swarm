@@ -36,6 +36,7 @@ parser.add_argument("--port", type=str, default="5557")
 parser.add_argument("--jmeter", action="store_true")
 parser.add_argument("--jmeter-gui", action="store_true")
 parser.add_argument("--jmeter-kill-first", action="store_true")
+parser.add_argument("--remote-master", type=str)
 
 args, unrecognized_args = parser.parse_known_args()
 
@@ -145,25 +146,6 @@ if args.jmeter:
 else:
     # locust
     os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
-    master_command = [
-        "locust",
-        "--master",
-        "--master-bind-port",
-        str(port),
-        "--master-bind-host=127.0.0.1",  # this avoids MacOS popups about opening firewall for python
-        "--expect-slaves",
-        str(slave_process_count),
-        "--no-web",
-        "-f",
-        testplan,
-        "-t",
-        run_time,
-        "--exit-code-on-error",
-        "0",  # return zero even if there were failed samples (locust default is to return 1)
-        *unrecognized_args,
-    ]
-    logging.info(f"launching master: {' '.join(master_command)}")
-    master_proc = subprocess.Popen(master_command)
     locust_env_vars = []
 
     for varname in os.environ:
@@ -178,11 +160,43 @@ else:
             else:
                 locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
 
+    if args.remote_master:
+        bind_only_localhost = []
+        check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
+    else:
+        # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
+        bind_only_localhost = ["--master-bind-host=127.0.0.1"]
+
+    master_command = [
+        "locust",
+        "--master",
+        "--master-bind-port",
+        str(port),
+        *bind_only_localhost,
+        "--expect-slaves",
+        str(slave_process_count),
+        "--no-web",
+        "-f",
+        testplan,
+        "-t",
+        run_time,
+        "--exit-code-on-error",
+        "0",  # return zero even if there were failed samples (locust default is to return 1)
+        *unrecognized_args,
+    ]
+    if args.remote_master:
+        check_output(f"rsync -qr * {args.remote_master}:")
+        master_command = ["ssh", "-q", args.remote_master, "'"] + locust_env_vars + master_command + ["'"]
+    logging.info(f"launching master: {' '.join(master_command)}")
+    master_proc = subprocess.Popen(" ".join(master_command), shell=True)
+
     for slave in slaves:
         # fail early if master has already terminated
         check_proc_running(master_proc)
         slave_procs.extend(
-            start_locust_processes(slave, port, args.processes_per_loadgen, locust_env_vars, testplan_filename)
+            start_locust_processes(
+                slave, port, args.processes_per_loadgen, locust_env_vars, testplan_filename, args.remote_master
+            )
         )
 
 # check that slave procs didnt immediately terminate for some reason (like invalid parameters)
