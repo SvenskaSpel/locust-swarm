@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 import ast
 import re
+import os
+
+if os.name == "nt":
+    raise Exception("Looks like you are on windows. Only MacOS and Linux are supported :(")
 
 from setuptools import find_packages, setup
 
@@ -23,6 +27,7 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
     ],
