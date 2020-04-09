@@ -72,7 +72,7 @@ def check_and_lock_server(server):
     # a server is considered busy if it is either running a locust/jmeter process or
     # is "locked" by a sleep command with somewhat unique syntax.
     # the regex uses a character class ([.]) to avoid matching with the pgrep command itself
-    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --slave|[j]meter/bin/ApacheJMeter.jar' && echo busy || (echo available && sleep 1 19)\""
+    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --worker|[j]meter/bin/ApacheJMeter.jar' && echo busy || (echo available && sleep 1 19)\""
 
     logging.debug(check_command)
     p = subprocess.Popen(check_command, stdout=subprocess.PIPE, shell=True)
@@ -106,7 +106,7 @@ def cleanup(slaves, args):  # pylint: disable=W0612
         if args.jmeter:
             check_output(f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true")
         else:
-            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --slave\"' || true")
+            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' || true")
     logging.debug("cleanup complete")
 
 
@@ -140,11 +140,11 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 *locust_env_vars,
                 *nohup,
                 "locust",
-                "--slave",
+                "--worker",
                 "--master-port",
                 str(port),
                 *master_parameters,
-                "--no-web",
+                "--headless",
                 "-f",
                 testplan_filename,
                 *ensure_remote_kill,
