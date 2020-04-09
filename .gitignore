@@ -5,3 +5,4 @@ locust_swarm.egg-info
 build
 dist
 jmeter.log
+.mypy_cache
