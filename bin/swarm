@@ -27,7 +27,8 @@ parser = configargparse.ArgumentParser(
 
 parser.add_argument("-f", "--locustfile", type=str, dest="testplan")
 parser.add_argument("-t", "--run-time", type=str, dest="run_time")
-parser.add_argument("--no-web", type=str, dest="ignore_this")
+parser.add_argument("-c", "--clients", type=str, dest="clients")
+parser.add_argument("--headless", type=bool, dest="ignore_this")
 parser.add_argument("--processes-per-loadgen", type=int, default=4)
 parser.add_argument("--loadgens", type=int, default=2)
 parser.add_argument("--loadgen-list", type=str, default=os.environ.get("LOADGEN_LIST"))
@@ -55,12 +56,6 @@ if args.loadgen_list is None:
 if not args.jmeter:
     if not args.run_time:
         parser.error("Run time (-t) not specified. This is mandatory when running locust.")
-    client_count = None
-    for i, argument in enumerate(unrecognized_args):
-        if argument == "-c":
-            client_count = int(unrecognized_args[i + 1])
-    if not client_count:
-        parser.error("Client count (-c) not specified. This is mandatory when running locust.")
 
 if args.testplan is None:
     if args.jmeter:
@@ -75,6 +70,7 @@ if "/" in testplan:
 
 testplan_filename = os.path.split(testplan)[1]
 run_time = args.run_time
+clients = args.clients
 port = int(args.port)
 processes_per_loadgen = args.processes_per_loadgen
 loadgens = args.loadgens
@@ -155,7 +151,7 @@ else:
                 # when client count < slave_process count, not all locust processes will get a client,
                 # so use the minium of the two when distributing rps.
                 locust_env_vars.append(
-                    f'LOCUST_RPS="{float(os.environ[varname])/min(slave_process_count, client_count)}"'
+                    f'LOCUST_RPS="{float(os.environ[varname])/min(slave_process_count, int(args.clients))}"'
                 )
             else:
                 locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
@@ -179,13 +175,15 @@ else:
         "--master-bind-port",
         str(port),
         *bind_only_localhost,
-        "--expect-slaves",
+        "--expect-workers",
         str(slave_process_count),
-        "--no-web",
+        "--headless",
         "-f",
         testplan,
         "-t",
         run_time,
+        "-c",
+        clients,
         "--exit-code-on-error",
         "0",  # return zero even if there were failed samples (locust default is to return 1)
         *unrecognized_args,
