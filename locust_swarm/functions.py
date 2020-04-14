@@ -102,11 +102,16 @@ def cleanup(slaves, args):  # pylint: disable=W0612
         except psutil.NoSuchProcess:
             pass
     psutil.wait_procs(procs, timeout=3)
-    for server in slaves:
-        if args.jmeter:
-            check_output(f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true")
-        else:
-            check_output(f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' || true")
+    if args.jmeter:
+        check_output_multiple(
+            f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true"
+            for server in slaves
+        )
+    else:
+        check_output_multiple(
+            f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' | grep -v 'No such process' || true"
+            for server in slaves
+        )
     logging.debug("cleanup complete")
 
 
