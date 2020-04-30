@@ -11,39 +11,24 @@
             "program": "/usr/local/bin/swarm",
             "console": "integratedTerminal",
             "args": [
+                "-f",
+                "../pes/locust/mix.py",
                 "-t",
-                "10",
-                "-c",
-                "2",
+                "360",
+                "-u",
+                "100",
                 "-L",
                 "DEBUG",
-                "-H",
-                "http://example.com",
+                // "-H",
+                // "http://example.com",
                 "--loadgens",
                 "2"
             ],
-            "cwd": "../locust-plugins/examples",
             "env": {
                 "LOCUST_RPS": "1",
                 "LC_ALL": "en_US.UTF-8"
-            }
-        },
-        {
-            "name": "swarm jmeter",
-            "type": "python",
-            "request": "launch",
-            "program": "/usr/local/bin/swarm",
-            "console": "integratedTerminal",
-            "args": [
-                "--jmeter",
-                "-Jhost=http://example.com",
-                "-L",
-                "DEBUG"
-            ],
-            "cwd": "/directory/of/jmxfile/and/load_profile/",
-            "env": {
-                "LC_ALL": "en_US.UTF-8"
-            }
+            },
+            "justMyCode": false
         }
     ]
 }

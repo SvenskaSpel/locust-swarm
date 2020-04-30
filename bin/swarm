@@ -22,15 +22,15 @@ parser = configargparse.ArgumentParser(
     default_config_files=["~/.locust.conf", "locust.conf"],
     auto_env_var_prefix="LOCUST_",
     description="A tool for running locust/jmeter in a distributed fashion.",
-    epilog="Any parameters not listed here are forwarded to locust/jmeter unmodified, so go ahead and use things like -c, -r, --host, ... All env vars starting with LOCUST_ will be forwarded to the slaves.",
+    epilog="Any parameters not listed here are forwarded to locust/jmeter unmodified, so go ahead and use things like -u, -r, --host, ... All env vars starting with LOCUST_ will be forwarded to the slaves.",
 )
 
 parser.add_argument("-f", "--locustfile", type=str, dest="testplan")
 parser.add_argument("-t", "--run-time", type=str, dest="run_time")
-parser.add_argument("-c", "--clients", type=str, dest="clients")
+parser.add_argument("-u", "--users", type=str, dest="users")
 parser.add_argument("--headless", type=bool, dest="ignore_this")
 parser.add_argument("--processes-per-loadgen", type=int, default=4)
-parser.add_argument("--loadgens", type=int, default=2)
+parser.add_argument("--loadgens", type=int, default=1)
 parser.add_argument("--loadgen-list", type=str, default=os.environ.get("LOADGEN_LIST"))
 parser.add_argument("-L", type=str, dest="loglevel")
 parser.add_argument("--port", type=str, default="5557")
@@ -70,7 +70,7 @@ if "/" in testplan:
 
 testplan_filename = os.path.split(testplan)[1]
 run_time = args.run_time
-clients = args.clients
+users = args.users
 port = int(args.port)
 processes_per_loadgen = args.processes_per_loadgen
 loadgens = args.loadgens
@@ -151,7 +151,7 @@ else:
                 # when client count < slave_process count, not all locust processes will get a client,
                 # so use the minium of the two when distributing rps.
                 locust_env_vars.append(
-                    f'LOCUST_RPS="{float(os.environ[varname])/min(slave_process_count, int(args.clients))}"'
+                    f'LOCUST_RPS="{float(os.environ[varname])/min(slave_process_count, int(args.users))}"'
                 )
             else:
                 locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
@@ -182,8 +182,8 @@ else:
         testplan,
         "-t",
         run_time,
-        "-c",
-        clients,
+        "-u",
+        users,
         "--exit-code-on-error",
         "0",  # return zero even if there were failed samples (locust default is to return 1)
         *unrecognized_args,
