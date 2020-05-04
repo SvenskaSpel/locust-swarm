@@ -156,6 +156,8 @@ else:
             else:
                 locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
 
+    locust_env_vars.append("PYTHONUNBUFFERED=1")  # dont buffer locust worker's stdout, show it immediately
+
     if args.remote_master:
         ssh_command = ["ssh", "-q", args.remote_master, "'", *locust_env_vars, "nohup"]
         bind_only_localhost = []
