@@ -121,16 +121,16 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
     # upload locust-extensions
     check_output(f"rsync -qr {locust_plugins.__path__[0]} {slave}:")
 
-    if not remote_master:
-        port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
-        ensure_remote_kill = ["& read; kill -9 $!"]
-        nohup = []
-        master_parameters = []
-    else:
+    if remote_master:
         port_forwarding_parameters = []
         ensure_remote_kill = []
         nohup = ["nohup"]
         master_parameters = ["--master-host " + remote_master]
+    else:
+        port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+        ensure_remote_kill = ["& read; kill -9 $!"]
+        nohup = []
+        master_parameters = []
 
     procs = []
     for i in range(processes_per_loadgen):
