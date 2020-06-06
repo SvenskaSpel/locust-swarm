@@ -15,7 +15,7 @@ pip install locust-swarm
 On the loadgens:
 
 ```
-pip install locustio
+pip install locust
 ```
 
 Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the slaves over ssh.
