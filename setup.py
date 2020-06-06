@@ -18,10 +18,8 @@ with open(_init_file, "rb") as f:
 
 class PostDevelopCommand(develop):
     def run(self):
-        if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-            sys.exit(
-                "Your Python version is no longer supported by Locust. Please upgrade Python to at least 3.6, or use a pinned old locust version (pip/pip3 install locustio==0.13.5)"
-            )
+        if os.name == "nt":
+            sys.exit("Looks like you are on windows. Only MacOS and Linux are supported :(")
         develop.run(self)
 
 
