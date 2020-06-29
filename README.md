@@ -18,7 +18,7 @@ On the loadgens:
 pip install locust
 ```
 
-Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the slaves over ssh.
+Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the workers over ssh.
 
 ## Detailed help
 
@@ -28,7 +28,7 @@ swarm -h
 
 ## Configuration
 
-Any env vars starting with LOCUST_ will be forwarded to the load gen slaves. You can use this to parametrize your locust scripts.
+Any env vars starting with LOCUST_ will be forwarded to the load gen workers. You can use this to parametrize your locust scripts.
 
 ## Example run
 
@@ -37,9 +37,9 @@ This assumes you have env vars like LOADGEN_LIST etc set. Just try running it an
 ```
 ~/git/locust-swarm > swarm -t 10 -c 10  --loadgens 1 --processes-per-loadgen 2 -f examples/locustfile.py -H https://example.com
 [2019-09-20 13:46:09,726] lafp-mac-JG5J/INFO/root: Follow test run here: https://grafana/d/qjIIww4Zz/locust?orgId=1&var-testplan=example&from=1568979968805&to=now
-[2019-09-20 13:46:09,885] lafp-mac-JG5J/INFO/root: Waiting for slaves to be ready, 0 of 2 connected
-[2019-09-20 13:46:10,889] lafp-mac-JG5J/INFO/root: Waiting for slaves to be ready, 0 of 2 connected
-[2019-09-20 13:46:11,891] lafp-mac-JG5J/INFO/root: Waiting for slaves to be ready, 0 of 2 connected
+[2019-09-20 13:46:09,885] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
+[2019-09-20 13:46:10,889] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
+[2019-09-20 13:46:11,891] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
 [2019-09-20 13:46:12,195] perftest03/INFO/locust.main: Starting Locust 0.11.1
 [2019-09-20 13:46:12,195] perftest03/INFO/locust.main: Starting Locust 0.11.1
 [2019-09-20 13:46:12,322] lafp-mac-JG5J/INFO/locust.runners: Client 'perftest03_5ac395b244f3497796a6928e218da7ea' reported as ready. Currently 1 clients ready to swarm.
