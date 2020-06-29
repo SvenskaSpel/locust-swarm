@@ -69,10 +69,10 @@ def get_available_servers_and_lock_them(server_count, server_list):
 
 
 def check_and_lock_server(server):
-    # a server is considered busy if it is either running a locust/jmeter process or
+    # a server is considered busy if it is either running a locust process or
     # is "locked" by a sleep command with somewhat unique syntax.
     # the regex uses a character class ([.]) to avoid matching with the pgrep command itself
-    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --worker|[j]meter/bin/ApacheJMeter.jar' && echo busy || (echo available && sleep 1 19)\""
+    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --worker' && echo busy || (echo available && sleep 1 19)\""
 
     logging.debug(check_command)
     p = subprocess.Popen(check_command, stdout=subprocess.PIPE, shell=True)
@@ -81,18 +81,18 @@ def check_and_lock_server(server):
     while p.poll() is None:
         line = p.stdout.readline().decode().strip()
         if line == "available":
-            logging.debug(f"found available slave {server}")
+            logging.debug(f"found available worker {server}")
             return True
         if line == "busy":
-            logging.debug(f"found busy slave {server}")
+            logging.debug(f"found busy worker {server}")
             return False
 
     raise Exception(
-        f'could not determine if slave {server} was busy!? check command must have failed to return "available" or "busy". Maybe try it manually: {check_command}'
+        f'could not determine if worker {server} was busy!? check command must have failed to return "available" or "busy". Maybe try it manually: {check_command}'
     )
 
 
-def cleanup(slaves, args):  # pylint: disable=W0612
+def cleanup(workers, args):  # pylint: disable=W0612
     logging.debug("cleanup started")
     procs = psutil.Process().children()
     for p in procs:
@@ -102,24 +102,18 @@ def cleanup(slaves, args):  # pylint: disable=W0612
         except psutil.NoSuchProcess:
             pass
     psutil.wait_procs(procs, timeout=3)
-    if args.jmeter:
-        check_output_multiple(
-            f"ssh -q {server} 'kill -9 $(pgrep -u $USER -f \"[j]meter/bin/ApacheJMeter.jar\")' || true"
-            for server in slaves
-        )
-    else:
-        check_output_multiple(
-            f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' | grep -v 'No such process' || true"
-            for server in slaves
-        )
+    check_output_multiple(
+        f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' | grep -v 'No such process' || true"
+        for server in workers
+    )
     logging.debug("cleanup complete")
 
 
-def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
+def start_locust_processes(worker, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
     # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
-    check_output(f"rsync -qr --exclude locust.conf * {slave}:")
+    check_output(f"rsync -qr --exclude locust.conf * {worker}:")
     # upload locust-extensions
-    check_output(f"rsync -qr {locust_plugins.__path__[0]} {slave}:")
+    check_output(f"rsync -qr {locust_plugins.__path__[0]} {worker}:")
 
     if remote_master:
         port_forwarding_parameters = []
@@ -140,7 +134,7 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
                 "ssh",
                 "-q",
                 *port_forwarding_parameters,
-                slave,
+                worker,
                 "'",
                 *locust_env_vars,
                 *nohup,
@@ -158,22 +152,13 @@ def start_locust_processes(slave, port, processes_per_loadgen, locust_env_vars, 
         )
 
         if i == 0:
-            logging.info("First slave: " + cmd)
+            logging.info("First worker: " + cmd)
         else:
-            logging.debug("Slave: " + cmd)
+            logging.debug("worker: " + cmd)
 
         procs.append(subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE))
         port_forwarding_parameters = []  # only first ssh session should do port forwarding
     return procs
-
-
-def start_jmeter_process(slave, port, unrecognized_args):
-    check_output(f"scp -q load_profile.csv {slave}:")
-    # this should not really be needed, but we do it to be extra sure nothing else is running
-    check_output(f"ssh -q {slave} pkill -9 -u \\$USER java || true")
-    cmd = f'''ssh -q {slave} "nohup bash -lc 'jmeter/bin/jmeter-server -Jserver={slave} -Jserver.rmi.ssl.disable=true -Jserver_port={port} -Jsample_variables=server {" ".join(unrecognized_args)}'"'''
-    logging.debug("Slave: " + cmd)
-    return subprocess.Popen(cmd, shell=True)
 
 
 # ensure atexit handler gets called even if we get a signal (typically when terminating the debugger)
