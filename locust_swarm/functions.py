@@ -92,7 +92,7 @@ def check_and_lock_server(server):
     )
 
 
-def cleanup(workers, args):  # pylint: disable=W0612
+def cleanup(workers, _args):
     logging.debug("cleanup started")
     procs = psutil.Process().children()
     for p in procs:
