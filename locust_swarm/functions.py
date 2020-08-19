@@ -109,17 +109,22 @@ def cleanup(workers, args):  # pylint: disable=W0612
     logging.debug("cleanup complete")
 
 
-def start_locust_processes(worker, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
+def upload(server):
     # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
-    check_output(f"rsync -qr --exclude locust.conf * {worker}:")
+    check_output(f"rsync -qr --exclude locust.conf * {server}:")
     # upload locust-extensions
-    check_output(f"rsync -qr {locust_plugins.__path__[0]} {worker}:")
+    check_output(f"rsync -qr {locust_plugins.__path__[0]} {server}:")
+
+
+def start_locust_processes(worker, port, processes_per_loadgen, locust_env_vars, testplan_filename, remote_master):
+    upload(worker)
 
     if remote_master:
         port_forwarding_parameters = []
         ensure_remote_kill = []
         nohup = ["nohup"]
         master_parameters = ["--master-host " + remote_master]
+
     else:
         port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
         ensure_remote_kill = ["& read; kill -9 $!"]

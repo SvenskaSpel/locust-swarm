@@ -2,7 +2,6 @@
 import atexit
 import logging
 import os
-import re
 import signal
 import subprocess
 import sys
@@ -59,8 +58,6 @@ if "/" in testplan:
     )
 
 testplan_filename = os.path.split(testplan)[1]
-# run_time = args.run_time
-# users = args.users
 port = int(args.port)
 processes_per_loadgen = args.processes_per_loadgen
 loadgens = args.loadgens
@@ -109,7 +106,7 @@ if args.remote_master:
     bind_only_localhost = []
     ssh_command_end = ["'"]
     check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
-    check_output(f"rsync -qr * {args.remote_master}:")
+    upload(args.remote_master)
 else:
     # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
     bind_only_localhost = ["--master-bind-host=127.0.0.1"]
