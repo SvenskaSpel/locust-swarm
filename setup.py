@@ -64,5 +64,5 @@ setup(
     zip_safe=False,
     install_requires=["locust-plugins>=1.0.16", "psutil", "ConfigArgParse>=1.0"],
     scripts=["bin/swarm"],
-    cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "egg_info": PostEggInfoCommand},
+    cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
 )
