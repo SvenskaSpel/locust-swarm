@@ -10,25 +10,18 @@
             "request": "launch",
             "program": "/usr/local/bin/swarm",
             "console": "integratedTerminal",
+            "cwd": "/Users/lafp/git/performance/locust",
             "args": [
                 "-f",
-                "../pes/locust/mix.py",
-                "-t",
-                "360",
-                "-u",
-                "100",
+                "racing.py",
                 "-L",
                 "DEBUG",
-                // "-H",
-                // "http://example.com",
-                "--loadgens",
-                "2"
             ],
             "env": {
-                "LOCUST_RPS": "1",
                 "LC_ALL": "en_US.UTF-8"
             },
-            "justMyCode": false
+            "justMyCode": false,
+            "gevent": true
         }
     ]
 }
