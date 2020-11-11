@@ -62,7 +62,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["locust-plugins>=1.0.17", "psutil", "ConfigArgParse>=1.0"],
+    install_requires=["keyring==21.4.0", "locust-plugins>=1.0.17", "psutil", "ConfigArgParse>=1.0"],
     scripts=["bin/swarm"],
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
 )
