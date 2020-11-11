@@ -2,14 +2,15 @@
 import atexit
 import logging
 import os
-import signal
 import subprocess
+import signal
 import sys
 import time
+import socket
 from datetime import datetime, timezone
-
+import psutil
 import configargparse
-from locust_swarm.functions import *
+import locust_plugins
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -18,7 +19,9 @@ logging.basicConfig(
 )
 
 parser = configargparse.ArgumentParser(
-    default_config_files=["~/.locust.conf", "locust.conf"],
+    # swarm is compatible with locust config files, but locust is not necessarily compatible
+    # with swarm config files (it will give an error on swarm-specific settings), so we enable both
+    default_config_files=["~/.locust.conf", "locust.conf", "~/.swarm.conf", "swarm.conf"],
     auto_env_var_prefix="LOCUST_",
     description="A tool for running locust in a distributed fashion.",
     epilog="Any parameters not listed here are forwarded to locust unmodified, so go ahead and use things like -u, -r, --host, ... Any env vars starting with LOCUST_ will also be forwarded to the workers.",
@@ -46,6 +49,150 @@ parser.add_argument(
 
 
 args, unrecognized_args = parser.parse_known_args()
+
+
+def is_port_in_use(portno: int):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex(("localhost", portno)) == 0
+
+
+def check_output(command):
+    logging.debug(command)
+    try:
+        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"command failed: {command}")
+        logging.error(e.output.decode().strip())
+        raise
+
+
+def check_output_multiple(list_of_commands):
+    running_procs = []
+    for command in list_of_commands:
+        logging.debug(command)
+        running_procs.append(subprocess.Popen(command, shell=True, stderr=subprocess.STDOUT))
+
+    while running_procs:
+        for process in running_procs:
+            retcode = process.poll()
+            if retcode is not None:  # Process finished.
+                running_procs.remove(process)
+                if retcode != 0:
+                    raise Exception(f"Bad return code {retcode} from command: {process.args}")
+                break
+            else:  # No process is done, wait a bit and check again.
+                time.sleep(0.1)
+                continue
+
+
+def check_proc_running(process):
+    retcode = process.poll()
+    if retcode is not None:
+        raise subprocess.CalledProcessError(retcode, process.args)
+
+
+def check_and_lock_server(server):
+    # a server is considered busy if it is either running a locust process or
+    # is "locked" by a sleep command with somewhat unique syntax.
+    # the regex uses a character class ([.]) to avoid matching with the pgrep command itself
+    check_command = f"ssh -o LogLevel=error {server} \"pgrep -u \\$USER -f '^sleep 1 19|[l]ocust --worker' && echo busy || (echo available && sleep 1 19)\""
+
+    logging.debug(check_command)
+    p = subprocess.Popen(check_command, stdout=subprocess.PIPE, shell=True)
+
+    line = None
+    while p.poll() is None:
+        line = p.stdout.readline().decode().strip()
+        if line == "available":
+            logging.debug(f"found available worker {server}")
+            return True
+        if line == "busy":
+            logging.debug(f"found busy worker {server}")
+            return False
+
+    raise Exception(
+        f'could not determine if worker {server} was busy!? check command must have failed to return "available" or "busy". Maybe try it manually: {check_command}'
+    )
+
+
+def cleanup(_args):
+    logging.debug("cleanup started")
+    procs = psutil.Process().children()
+    for p in procs:
+        logging.debug(f"killing subprocess {p}")
+        try:
+            p.kill()
+        except psutil.NoSuchProcess:
+            pass
+    psutil.wait_procs(procs, timeout=3)
+    check_output_multiple(
+        f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' | grep -v 'No such process' || true"
+        for server in workers
+    )
+    logging.debug("cleanup complete")
+
+
+def upload(server):
+    # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
+    check_output(f"rsync -qr --exclude locust.conf * {server}:")
+    # upload locust-extensions
+    check_output(f"rsync -qr {locust_plugins.__path__[0]} {server}:")
+
+
+def start_locust_processes(server):
+    upload(server)
+
+    if args.remote_master:
+        port_forwarding_parameters = []
+        ensure_remote_kill = []
+        nohup = ["nohup"]
+        master_parameters = ["--master-host " + args.remote_master]
+
+    else:
+        port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+        ensure_remote_kill = ["& read; kill -9 $!"]
+        nohup = []
+        master_parameters = []
+
+    procs = []
+    for i in range(args.processes_per_loadgen):
+
+        cmd = " ".join(
+            [
+                "ssh",
+                "-q",
+                *port_forwarding_parameters,
+                server,
+                "'",
+                *locust_env_vars,
+                *nohup,
+                "locust",
+                "--worker",
+                "--master-port",
+                str(port),
+                *master_parameters,
+                "--headless",
+                "-f",
+                testplan_filename,
+                *ensure_remote_kill,
+                "'",  # ensure remote process terminates if swarm is killed
+            ]
+        )
+
+        if i == 0:
+            logging.info("First worker: " + cmd)
+        else:
+            logging.debug("worker: " + cmd)
+
+        procs.append(subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE))
+        port_forwarding_parameters = []  # only first ssh session should do port forwarding
+    return procs
+
+
+# ensure atexit handler gets called even if we get a signal (typically when terminating the debugger)
+def sig_handler(_signo, _frame):
+    sys.exit(0)
+
 
 if args.loglevel:
     logging.getLogger().setLevel(args.loglevel.upper())
@@ -79,17 +226,37 @@ while is_port_in_use(port):
     port += 2
 
 
-workers = get_available_servers_and_lock_them(loadgens, server_list)
+def get_available_servers_and_lock_them():
+    attempts = 0
+    if loadgens == 0:
+        return []
+    while True:
+        available_servers = []
+        for server in server_list:
+            if check_and_lock_server(server):
+                available_servers.append(server)
+            if len(available_servers) == loadgens:
+                return available_servers
+        logging.info("Didnt get enough servers. Will try again...")
+        available_servers = []
+        time.sleep(25)
+        attempts += 1
+        if attempts > 5:
+            raise Exception("Never found enough servers :(")
+
+
+workers = get_available_servers_and_lock_them()
+
 worker_procs = []
 start_time = datetime.now(timezone.utc)
-atexit.register(cleanup, workers, args)
+atexit.register(cleanup, args)
 
 os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
 locust_env_vars = []
 
 for varname in os.environ:
     if varname.startswith("LOCUST_") or varname.startswith("PG"):
-        if varname == "LOCUST_RPS":
+        if varname == "LOCUST_RPS" and os.environ[varname]:
             # distribute the rps over the locust worker processes
             # when client count < worker_process count, not all locust processes will get a client,
             # so use the minium of the two when distributing rps.
@@ -141,11 +308,7 @@ master_proc = subprocess.Popen(" ".join(master_command), shell=True)
 for worker in workers:
     # fail early if master has already terminated
     check_proc_running(master_proc)
-    worker_procs.extend(
-        start_locust_processes(
-            worker, port, args.processes_per_loadgen, locust_env_vars, testplan_filename, args.remote_master
-        )
-    )
+    worker_procs.extend(start_locust_processes(worker))
 
 # check that worker procs didnt immediately terminate for some reason (like invalid parameters)
 time.sleep(2)
