@@ -6,7 +6,9 @@
         "**/pip-wheel-metadata": true,
         "**/locust_swarm.egg-info": true,
         "**/build": true,
-        "**/dist": true
+        "**/dist": true,
+        "**/.mypy_cache": true,
+        "**/.tox": true
     },
     "python.linting.pylintEnabled": true
 }
