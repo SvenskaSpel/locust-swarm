@@ -208,6 +208,8 @@ testplan_filename = os.path.split(testplan)[1]
 port = int(args.port)
 processes_per_loadgen = args.processes_per_loadgen
 loadgens = args.loadgens
+if loadgens < 1:
+    parser.error("loadgens parameter must be 1 or higher")
 worker_process_count = processes_per_loadgen * loadgens
 server_list = args.loadgen_list.split(",")
 workers = []
@@ -228,8 +230,6 @@ while is_port_in_use(port):
 
 def get_available_servers_and_lock_them():
     attempts = 0
-    if loadgens == 0:
-        return []
     while True:
         available_servers = []
         for server in server_list:
