@@ -124,9 +124,11 @@ def cleanup(_args):
             p.kill()
         except psutil.NoSuchProcess:
             pass
+        except psutil.AccessDenied:
+            pass
     psutil.wait_procs(procs, timeout=3)
     check_output_multiple(
-        f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' | grep -v 'No such process' || true"
+        f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' 2>&1 | grep -v 'No such process' || true"
         for server in workers
     )
     logging.debug("cleanup complete")
