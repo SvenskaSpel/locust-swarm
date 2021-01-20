@@ -230,6 +230,7 @@ while is_port_in_use(port):
 
 def get_available_servers_and_lock_them():
     attempts = 0
+    check_interval = 25
     while True:
         available_servers = []
         for server in server_list:
@@ -237,9 +238,9 @@ def get_available_servers_and_lock_them():
                 available_servers.append(server)
             if len(available_servers) == loadgens:
                 return available_servers
-        logging.info("Didnt get enough servers. Will try again...")
+        logging.info(f"Didnt get enough servers. Will try again in {check_interval} seconds...")
         available_servers = []
-        time.sleep(25)
+        time.sleep(check_interval)
         attempts += 1
         if attempts > 5:
             raise Exception("Never found enough servers :(")
