@@ -28,7 +28,12 @@ parser = configargparse.ArgumentParser(
 )
 
 parser.add_argument("-f", "--locustfile", type=str, dest="testplan")
-parser.add_argument("--headless", type=bool, dest="ignore_this")
+parser.add_argument(
+    "--headless",
+    action="store_true",
+    dest="ignore_this",
+    help=configargparse.SUPPRESS,
+)
 parser.add_argument(
     "--loadgen-list",
     type=str,
