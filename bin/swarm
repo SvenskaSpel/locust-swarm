@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import psutil
 import configargparse
 import locust_plugins
+import locust.util.timespan
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -51,7 +52,12 @@ parser.add_argument(
     type=str,
     help="An ssh server to use as locust master (default is to run the master on the same machine as swarm). This is useful when rurnning swarm on your workstation if it might become disconnected",
 )
-
+parser.add_argument(
+    "-t",
+    "--run-time",
+    help=configargparse.SUPPRESS,
+    env_var="LOCUST_RUN_TIME",
+)
 
 args, unrecognized_args = parser.parse_known_args()
 
@@ -288,6 +294,9 @@ else:
     ssh_command = []
     ssh_command_end = []
 
+if args.run_time:
+    unrecognized_args.append("--run-time=" + args.run_time)
+
 master_command = [
     *ssh_command,
     "locust",
@@ -300,10 +309,6 @@ master_command = [
     "--headless",
     "-f",
     testplan,
-    # "-t",
-    # run_time,
-    # "-u",
-    # users,
     "--exit-code-on-error",
     "0",  # return zero even if there were failed samples (locust default is to return 1)
     *unrecognized_args,
@@ -323,13 +328,20 @@ time.sleep(2)
 for proc in worker_procs:
     check_proc_running(proc)
 
+start_time = time.time()
+max_run_time = locust.util.timespan.parse_timespan(args.run_time) if args.run_time else float("inf")
+
 # wait for test to complete
 while True:
     try:
         code = master_proc.wait(timeout=10)
         break
     except subprocess.TimeoutExpired:
-        pass
+        if max_run_time + 31 < time.time() - start_time:
+            logging.error(
+                f"Locust exceeded the run time specified ({max_run_time}) by more than 30 seconds, giving up"
+            )  #  pylint: disable=raise-missing-from
+            master_proc.send_signal(1)
     except KeyboardInterrupt:
         pass
     # ensure worker procs didnt die before master
