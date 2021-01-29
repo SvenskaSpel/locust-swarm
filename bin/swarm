@@ -58,7 +58,6 @@ parser.add_argument(
     help=configargparse.SUPPRESS,
     env_var="LOCUST_RUN_TIME",
 )
-parser.add_argument("user_classes", nargs=configargparse.REMAINDER)
 
 args, unrecognized_args = parser.parse_known_args()
 
@@ -313,7 +312,6 @@ master_command = [
     "--exit-code-on-error",
     "0",  # return zero even if there were failed samples (locust default is to return 1)
     *unrecognized_args,
-    " ".join(args.user_classes),
     *ssh_command_end,
 ]
 
