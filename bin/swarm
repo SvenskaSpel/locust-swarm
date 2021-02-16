@@ -12,6 +12,7 @@ import psutil
 import configargparse
 import locust_plugins
 import locust.util.timespan
+import locust_swarm
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -57,6 +58,13 @@ parser.add_argument(
     "--run-time",
     help=configargparse.SUPPRESS,
     env_var="LOCUST_RUN_TIME",
+)
+parser.add_argument(
+    "--version",
+    "-V",
+    action="version",
+    help="Show program's version number and exit",
+    version="%(prog)s {}".format(locust_swarm.__version__),
 )
 
 args, unrecognized_args = parser.parse_known_args()
