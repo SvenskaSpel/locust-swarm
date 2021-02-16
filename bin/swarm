@@ -148,8 +148,14 @@ def cleanup(_args):
 def upload(server):
     # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
     check_output(f"rsync -qr --exclude locust.conf * {server}:")
-    # upload locust-extensions
+    # upload locust-plugins
     check_output(f"rsync -qr {locust_plugins.__path__[0]} {server}:")
+    try:
+        import svs_locust  # pylint: disable=import-outside-toplevel
+
+        check_output(f"rsync -qr {svs_locust.__path__[0]} {server}:")
+    except ImportError:
+        pass  # svs_locust is an optional library that is only used internally at Svenska Spel. Please ignore it...
 
 
 def start_locust_processes(server):
