@@ -242,12 +242,19 @@ server_list = args.loadgen_list.split(",")
 workers = []
 
 try:
-    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} true", shell=True)
-except Exception:
-    logging.error(
-        f"Error ssh:ing to loadgen ({server_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
-    )
-    raise
+    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} true 2>&1", shell=True)
+except subprocess.CalledProcessError as e:
+    if "Host key verification failed." in str(e.stdout):
+        # add the server to known hosts
+        for server in server_list:
+            subprocess.check_output(
+                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {server} true", shell=True
+            )
+    else:
+        logging.error(
+            f"Error ssh:ing to loadgen ({server_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
+        )
+        raise
 
 signal.signal(signal.SIGTERM, sig_handler)
 
