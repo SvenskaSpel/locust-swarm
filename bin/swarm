@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+try:
+    import svs_locust  # pylint: disable=import-outside-toplevel
+except ModuleNotFoundError:
+    # svs-locust is a library that is only used internally at Svenska Spel, please ignore it
+    # We need to import it here to get some variables and the path to the installed package
+    pass
 import atexit
 import logging
 import os
@@ -13,6 +19,7 @@ import configargparse
 import locust_plugins
 import locust.util.timespan
 import locust_swarm
+
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -158,12 +165,11 @@ def upload(server):
     check_output(f"rsync -qr --exclude locust.conf * {server}:")
     # upload locust-plugins
     check_output(f"rsync -qr {locust_plugins.__path__[0]} {server}:")
+    check_output(f"rsync -qr {locust.__path__[0]}/.. {server}:locust/")
     try:
-        import svs_locust  # pylint: disable=import-outside-toplevel
-
         check_output(f"rsync -qr {svs_locust.__path__[0]} {server}:")
-    except ImportError:
-        pass  # svs_locust is an optional library that is only used internally at Svenska Spel. Please ignore it...
+    except NameError:
+        pass
 
 
 def start_locust_processes(server):
