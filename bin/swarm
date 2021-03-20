@@ -56,6 +56,13 @@ parser.add_argument(
     default=4,
     help="Number of locust worker processes to spawn for each load gen",
 )
+parser.add_argument(
+    "--selenium",
+    "-s",
+    action="store_true",
+    default=False,
+    help="Start selenium server",
+)
 parser.add_argument("--loadgens", type=int, default=1, help="Number of load gen servers to use")
 parser.add_argument("-L", type=str, dest="loglevel")
 parser.add_argument("--port", type=str, default="5557")
@@ -180,6 +187,15 @@ def upload(server):
 
 def start_worker_process(server):
     upload(server)
+
+    if args.selenium:
+        subprocess.Popen(
+            f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.*.jar standalone 2>&1 > selenium.log' &",
+            shell=True,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        time.sleep(5)
 
     if args.remote_master:
         port_forwarding_parameters = []
