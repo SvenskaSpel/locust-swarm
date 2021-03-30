@@ -33,7 +33,8 @@ parser = configargparse.ArgumentParser(
     default_config_files=["~/.locust.conf", "locust.conf", "~/.swarm.conf", "swarm.conf"],
     auto_env_var_prefix="LOCUST_",
     description="A tool for running locust in a distributed fashion.",
-    epilog="Any parameters not listed here are forwarded to locust unmodified, so go ahead and use things like -u, -r, --host, ... Any env vars starting with LOCUST_ will also be forwarded to the workers.",
+    epilog="Any parameters not listed here are forwarded to locust unmodified, so go ahead and use things like -u, -r, --host, ... Any env vars starting with LOCUST_ will also be forwarded to the workers. Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).\nExample: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10 ",
+    add_config_file_help=False,
 )
 
 parser.add_argument("-f", "--locustfile", type=str, dest="testplan")
