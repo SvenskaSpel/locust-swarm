@@ -234,6 +234,7 @@ def start_worker_process(server):
                 "--headless",
                 "-f",
                 testplan_filename,
+                *unrecognized_args,
                 *ensure_remote_kill,
                 "'",  # ensure remote process terminates if swarm is killed
             ]
@@ -348,8 +349,7 @@ else:
     ssh_command = []
     ssh_command_end = []
 
-if args.run_time:
-    unrecognized_args.append("--run-time=" + args.run_time)
+run_time_arg = ["--run-time=" + args.run_time] if args.run_time else []
 
 master_command = [
     *ssh_command,
@@ -363,6 +363,7 @@ master_command = [
     "--headless",
     "-f",
     testplan,
+    *run_time_arg,
     "--exit-code-on-error",
     "0",  # return zero even if there were failed samples (locust default is to return 1)
     *unrecognized_args,
