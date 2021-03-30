@@ -184,7 +184,7 @@ def cleanup(_args):
 
 def upload(server):
     # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
-    check_output(f"rsync -qr --exclude locust.conf * {server}:")
+    check_output(f"rsync -qr --exclude locust.conf --exclude *.png --exclude __pycache__ * {server}:")
     # upload locust-plugins
     check_output(f"rsync -qr --exclude __pycache__ {locust_plugins.__path__[0]} {server}:")
     # Use this to upload locust
