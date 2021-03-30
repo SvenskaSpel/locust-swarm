@@ -59,13 +59,23 @@ parser.add_argument(
 )
 parser.add_argument(
     "--selenium",
-    "-s",
     action="store_true",
     default=False,
-    help="Start selenium server",
+    help="Start selenium server on load gens for use with locust-plugins's WebdriverUser",
 )
-parser.add_argument("--loadgens", type=int, default=1, help="Number of load gen servers to use")
-parser.add_argument("-L", type=str, dest="loglevel")
+parser.add_argument(
+    "--loadgens",
+    "-l",
+    type=int,
+    default=1,
+    help="Number of load gen (worker) servers to use",
+)
+parser.add_argument(
+    "-L",
+    type=str,
+    dest="loglevel",
+    help="Use DEBUG for tracing issues with load gens etc",
+)
 parser.add_argument("--port", type=str, default="5557")
 parser.add_argument(
     "--remote-master",
