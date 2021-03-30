@@ -190,12 +190,16 @@ def start_worker_process(server):
 
     if args.selenium:
         subprocess.Popen(
-            f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.*.jar standalone 2>&1 > selenium.log' &",
+            f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.*.jar standalone > selenium.log 2>&1' &",
             shell=True,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(5)
+        time.sleep(1)
+        check_output(
+            f"ssh -q {server} 'pgrep -f \"^java -jar selenium-server-4.\"' # check to see selenium actually launched"
+        )
+        time.sleep(1)
 
     if args.remote_master:
         port_forwarding_parameters = []
