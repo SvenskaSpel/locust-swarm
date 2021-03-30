@@ -22,13 +22,56 @@ Swarm uses SSH to launch remote processes and SSH tunnels for communication, so 
 
 ## Detailed help
 
+Run
+
 ```
 swarm -h
 ```
 
-## Configuration
+```
+usage: swarm [-h] [-f TESTPLAN] --loadgen-list LOADGEN_LIST
+             [--processes-per-loadgen PROCESSES_PER_LOADGEN] [--selenium]
+             [--loadgens LOADGENS] [-L LOGLEVEL] [--port PORT]
+             [--remote-master REMOTE_MASTER] [--version]
 
-Any env vars starting with LOCUST_ will be forwarded to the load gen workers. You can use this to parametrize your locust scripts.
+A tool for running locust in a distributed fashion.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f TESTPLAN, --locustfile TESTPLAN
+                        [env var: LOCUST_LOCUSTFILE]
+  --loadgen-list LOADGEN_LIST
+                        A comma-separated list of ssh servers to act as load
+                        generators/workers [env var: LOCUST_LOADGEN_LIST]
+  --processes-per-loadgen PROCESSES_PER_LOADGEN, -p PROCESSES_PER_LOADGEN
+                        Number of locust worker processes to spawn for each
+                        load gen [env var: LOCUST_PROCESSES_PER_LOADGEN]
+  --selenium            Start selenium server on load gens for use with
+                        locust-plugins's WebdriverUser [env var:
+                        LOCUST_SELENIUM]
+  --loadgens LOADGENS, -l LOADGENS
+                        Number of load gen (worker) servers to use [env var:
+                        LOCUST_LOADGENS]
+  -L LOGLEVEL           Use DEBUG for tracing issues with load gens etc
+  --port PORT           [env var: LOCUST_PORT]
+  --remote-master REMOTE_MASTER
+                        An ssh server to use as locust master (default is to
+                        run the master on the same machine as swarm). This is
+                        useful when rurnning swarm on your workstation if it
+                        might become disconnected [env var:
+                        LOCUST_REMOTE_MASTER]
+  --version, -V         Show program's version number and exit
+
+Any parameters not listed here are forwarded to locust unmodified, so go ahead
+and use things like -u, -r, --host, ... Any env vars starting with LOCUST_
+will also be forwarded to the workers. Swarm config can also be set using
+config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
+Example: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f
+test.py -u 10
+
+ If an arg is specified in more than one place, then commandline values
+override environment variables which override defaults.
+```
 
 ## Example run
 
