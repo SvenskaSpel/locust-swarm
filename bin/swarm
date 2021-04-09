@@ -200,13 +200,14 @@ def start_worker_process(server):
     upload(server)
 
     if args.selenium:
+        check_output(f"ssh -q {server} 'rm -rf /tmp/.com.google.Chrome.*'")
         subprocess.Popen(
             f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.*.jar standalone > selenium.log 2>&1' &",
             shell=True,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        time.sleep(1)
+        time.sleep(0.2)
         check_output(
             f"ssh -q {server} 'pgrep -f \"^java -jar selenium-server-4.\"' # check to see selenium actually launched"
         )
