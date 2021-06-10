@@ -48,14 +48,14 @@ parser.add_argument(
     "--loadgen-list",
     type=str,
     required=True,
-    help="A comma-separated list of ssh servers to act as load generators/workers",
+    help="A comma-separated list of ssh servers on which to launch locust workers",
 )
 parser.add_argument(
     "--processes-per-loadgen",
     "-p",
     type=int,
     default=4,
-    help="Number of locust worker processes to spawn for each load gen",
+    help="Number of locust worker processes to spawn on each load gen",
 )
 parser.add_argument(
     "--selenium",
@@ -68,7 +68,7 @@ parser.add_argument(
     "-l",
     type=int,
     default=1,
-    help="Number of load gen (worker) servers to use",
+    help="Number of servers to run locust workers on",
 )
 parser.add_argument(
     "-L",
@@ -152,14 +152,14 @@ def check_and_lock_server(server):
     while p.poll() is None:
         line = p.stdout.readline().decode().strip()
         if line == "available":
-            logging.debug(f"found available worker {server}")
+            logging.debug(f"available load generator {server}")
             return True
         if line == "busy":
-            logging.debug(f"found busy worker {server}")
+            logging.debug(f"busy load generator {server}")
             return False
 
     raise Exception(
-        f'could not determine if worker {server} was busy!? check command must have failed to return "available" or "busy". Maybe try it manually: {check_command}'
+        f'could not determine if loadgen {server} was busy!? check command must have failed to return "available" or "busy". Maybe try it manually: {check_command}'
     )
 
 
@@ -177,7 +177,7 @@ def cleanup(_args):
     psutil.wait_procs(procs, timeout=3)
     check_output_multiple(
         f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' 2>&1 | grep -v 'No such process' || true"
-        for server in workers
+        for server in server_list
     )
     logging.debug("cleanup complete")
 
@@ -283,21 +283,20 @@ loadgens = args.loadgens
 if loadgens < 1:
     parser.error("loadgens parameter must be 1 or higher")
 worker_process_count = processes_per_loadgen * loadgens
-server_list = args.loadgen_list.split(",")
-workers = []
+loadgen_list = args.loadgen_list.split(",")
 
 try:
-    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {server_list[0]} true 2>&1", shell=True)
+    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1", shell=True)
 except subprocess.CalledProcessError as e:
     if "Host key verification failed." in str(e.stdout):
-        # add the server to known hosts
-        for server in server_list:
+        # add all loadgens to known hosts
+        for loadgen in loadgen_list:
             subprocess.check_output(
-                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {server} true", shell=True
+                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true", shell=True
             )
     else:
         logging.error(
-            f"Error ssh:ing to loadgen ({server_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
+            f"Error ssh:ing to loadgen ({loadgen_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
         )
         raise
 
@@ -312,12 +311,14 @@ def get_available_servers_and_lock_them():
     check_interval = 25
     while True:
         available_servers = []
-        for server in server_list:
+        for server in loadgen_list:
             if check_and_lock_server(server):
                 available_servers.append(server)
             if len(available_servers) == loadgens:
                 return available_servers
-        logging.info(f"Didnt get enough servers. Will try again in {check_interval} seconds...")
+        logging.info(
+            f"Only found {len(available_servers)} available servers, wanted {loadgens}. Will try again in {check_interval} seconds..."
+        )
         available_servers = []
         time.sleep(check_interval)
         attempts += 1
@@ -325,7 +326,7 @@ def get_available_servers_and_lock_them():
             raise Exception("Never found enough servers :(")
 
 
-workers = get_available_servers_and_lock_them()
+server_list = get_available_servers_and_lock_them()
 
 worker_procs = []
 start_time = datetime.now(timezone.utc)
@@ -384,15 +385,16 @@ master_command = [
 logging.info(f"launching master: {' '.join(master_command)}")
 master_proc = subprocess.Popen(" ".join(master_command), shell=True)
 
-for worker in workers:
+for server in server_list:
     # fail early if master has already terminated
     check_proc_running(master_proc)
-    worker_procs.extend(start_worker_process(worker))
+    worker_procs.extend(start_worker_process(server))
 
 # check that worker procs didnt immediately terminate for some reason (like invalid parameters)
-time.sleep(2)
+time.sleep(5)
 for proc in worker_procs:
     check_proc_running(proc)
+    logging.debug("all workers seem to have launched fine")
 
 start_time = time.time()
 max_run_time = locust.util.timespan.parse_timespan(args.run_time) if args.run_time else float("inf")

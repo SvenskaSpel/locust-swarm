@@ -1,8 +1,8 @@
 # Swarm
 
-Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator workers.
+Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers.
 
-Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), allowing you to do things like RPS limiting in a distributed setting.
+Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), automatically installing it on load gens if available.
 
 ## Installation
 
@@ -19,6 +19,10 @@ pip install locust
 ```
 
 Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the workers over ssh.
+
+## Other requirements
+
+Servers must be running bash v4.3 or later.
 
 ## Detailed help
 
@@ -42,7 +46,7 @@ optional arguments:
                         [env var: LOCUST_LOCUSTFILE]
   --loadgen-list LOADGEN_LIST
                         A comma-separated list of ssh servers to act as load
-                        generators/workers [env var: LOCUST_LOADGEN_LIST]
+                        generators [env var: LOCUST_LOADGEN_LIST]
   --processes-per-loadgen PROCESSES_PER_LOADGEN, -p PROCESSES_PER_LOADGEN
                         Number of locust worker processes to spawn for each
                         load gen [env var: LOCUST_PROCESSES_PER_LOADGEN]
@@ -50,7 +54,7 @@ optional arguments:
                         locust-plugins's WebdriverUser [env var:
                         LOCUST_SELENIUM]
   --loadgens LOADGENS, -l LOADGENS
-                        Number of load gen (worker) servers to use [env var:
+                        Number of servers to launch workers on [env var:
                         LOCUST_LOADGENS]
   -L LOGLEVEL           Use DEBUG for tracing issues with load gens etc
   --port PORT           [env var: LOCUST_PORT]
