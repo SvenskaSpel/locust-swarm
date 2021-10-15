@@ -345,7 +345,7 @@ for varname in os.environ:
                 f'LOCUST_RPS="{float(os.environ[varname])/min(worker_process_count, int(args.users))}"'
             )
         elif varname == "LOCUST_LOADGEN_LIST":
-            next # dont pass this
+            next  # dont pass this
         else:
             locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
 
