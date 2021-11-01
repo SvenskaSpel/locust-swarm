@@ -371,6 +371,8 @@ master_command = [
     *bind_only_localhost,
     "--expect-workers",
     str(worker_process_count),
+    "--expect-workers-max-wait",
+    "10",
     "--headless",
     "-f",
     testplan,
