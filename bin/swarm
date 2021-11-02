@@ -202,7 +202,7 @@ def start_worker_process(server):
     if args.selenium:
         check_output(f"ssh -q {server} 'rm -rf /tmp/.com.google.Chrome.*' || true")
         selenium_cmd = f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.0.0.jar standalone > selenium.log 2>&1' &"
-        logging.debug(selenium_cmd)
+        logging.info(selenium_cmd)
         subprocess.Popen(selenium_cmd, shell=True, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
         time.sleep(0.2)
         check_output(
