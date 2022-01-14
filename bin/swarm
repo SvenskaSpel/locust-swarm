@@ -345,6 +345,7 @@ atexit.register(cleanup, args)
 os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
 
 if args.remote_master:
+    logging.info(f"Some argument passing will not work with remote master (broken since 2.0)")
     ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
     bind_only_localhost = []
     ssh_command_end = ["'"]
