@@ -1,6 +1,6 @@
 # Swarm
 
-Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers.
+Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers, using SSH.
 
 Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), automatically installing it on load gens if available.
 
