@@ -33,7 +33,7 @@ parser = configargparse.ArgumentParser(
     default_config_files=["~/.locust.conf", "locust.conf", "~/.swarm.conf", "swarm.conf"],
     auto_env_var_prefix="LOCUST_",
     description="A tool for running locust in a distributed fashion.",
-    epilog="Any parameters not listed here are forwarded to locust unmodified, so go ahead and use things like -u, -r, --host, ... Any env vars starting with LOCUST_ will also be forwarded to the workers. Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).\nExample: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10 ",
+    epilog="Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like -u, -r, --host, ... Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).\nExample: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10",
     add_config_file_help=False,
 )
 
@@ -203,7 +203,13 @@ def start_worker_process(server):
         check_output(f"ssh -q {server} 'rm -rf /tmp/.com.google.Chrome.*' || true")
         selenium_cmd = f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.0.0.jar standalone > selenium.log 2>&1' &"
         logging.info(selenium_cmd)
-        subprocess.Popen(selenium_cmd, shell=True, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+        subprocess.Popen(
+            selenium_cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
         time.sleep(0.2)
         check_output(
             f"ssh -q {server} 'pgrep -f \"^java -jar selenium-server-4.\"' # check to see selenium actually launched"
@@ -232,7 +238,7 @@ def start_worker_process(server):
                 *port_forwarding_parameters,
                 server,
                 "'",
-                *locust_env_vars,
+                "PYTHONUNBUFFERED=1",
                 *nohup,
                 "locust",
                 "--worker",
@@ -242,9 +248,8 @@ def start_worker_process(server):
                 "--headless",
                 "-f",
                 testplan_filename,
-                *unrecognized_args,
                 *ensure_remote_kill,
-                "'",  # ensure remote process terminates if swarm is killed
+                "'",
             ]
         )
 
@@ -253,7 +258,15 @@ def start_worker_process(server):
         else:
             logging.debug("worker: " + cmd)
 
-        procs.append(subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stderr=subprocess.STDOUT))
+        procs.append(
+            subprocess.Popen(
+                cmd,
+                shell=True,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,  # dont forward CTRL-C, let locust quit the workers instead
+            )
+        )
         port_forwarding_parameters = []  # only first ssh session should do port forwarding
     return procs
 
@@ -330,26 +343,9 @@ start_time = datetime.now(timezone.utc)
 atexit.register(cleanup, args)
 
 os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
-locust_env_vars = []
-
-for varname in os.environ:
-    if varname.startswith("LOCUST_") or varname.startswith("PG"):
-        if varname == "LOCUST_RPS" and os.environ[varname]:
-            # distribute the rps over the locust worker processes
-            # when client count < worker_process count, not all locust processes will get a client,
-            # so use the minium of the two when distributing rps.
-            locust_env_vars.append(
-                f'LOCUST_RPS="{float(os.environ[varname])/min(worker_process_count, int(args.users))}"'
-            )
-        elif varname == "LOCUST_LOADGEN_LIST":
-            next  # dont pass this
-        else:
-            locust_env_vars.append(f'{varname}="{os.environ[varname]}"')
-
-locust_env_vars.append("PYTHONUNBUFFERED=1")  # dont buffer locust worker's stdout, show it immediately
 
 if args.remote_master:
-    ssh_command = ["ssh", "-q", args.remote_master, "'", *locust_env_vars, "nohup"]
+    ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
     bind_only_localhost = []
     ssh_command_end = ["'"]
     check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
@@ -361,6 +357,10 @@ else:
     ssh_command_end = []
 
 run_time_arg = ["--run-time=" + args.run_time] if args.run_time else []
+
+if args.loglevel:
+    unrecognized_args.append("-L")
+    unrecognized_args.append(args.loglevel)
 
 master_command = [
     *ssh_command,
@@ -392,10 +392,15 @@ for server in server_list:
     worker_procs.extend(start_worker_process(server))
 
 # check that worker procs didnt immediately terminate for some reason (like invalid parameters)
-time.sleep(5)
+try:
+    time.sleep(5)
+except KeyboardInterrupt:  # dont give strange callstack if interrupted
+    sys.exit(1)
+
 for proc in worker_procs:
     check_proc_running(proc)
-    logging.debug("all workers seem to have launched fine")
+
+logging.debug("all workers seem to have launched fine")
 
 start_time = time.time()
 max_run_time = locust.util.timespan.parse_timespan(args.run_time) if args.run_time else float("inf")

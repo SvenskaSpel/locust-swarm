@@ -16,6 +16,10 @@ On the loadgens:
 
 ```
 pip install locust
+# if you want to use locust-plugins:
+# pip install locust-plugins 
+# as swarm automatically copies locust-plugins to loadgens every time, you can then uninstall it, leaving only its dependencies:
+# pip uninstall locust-plugins
 ```
 
 Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the workers over ssh.
@@ -66,9 +70,8 @@ optional arguments:
                         LOCUST_REMOTE_MASTER]
   --version, -V         Show program's version number and exit
 
-Any parameters not listed here are forwarded to locust unmodified, so go ahead
-and use things like -u, -r, --host, ... Any env vars starting with LOCUST_
-will also be forwarded to the workers. Swarm config can also be set using
+Any parameters not listed here are forwarded to locust master unmodified, so go ahead
+and use things like -u, -r, --host, ... Swarm config can also be set using
 config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
 Example: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f
 test.py -u 10
@@ -79,7 +82,7 @@ override environment variables which override defaults.
 
 ## Example run
 
-This assumes you have env vars like LOADGEN_LIST etc set. Just try running it and you'll get feedback on what is missing.
+This assumes you have env vars like LOADGEN_LIST etc set. Just try running swarm and you'll get feedback on what is missing.
 
 ```
 ~/git/locust-swarm > swarm -t 10 -c 10  --loadgens 1 --processes-per-loadgen 2 -f examples/locustfile.py -H https://example.com
