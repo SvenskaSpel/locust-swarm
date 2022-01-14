@@ -40,7 +40,7 @@ class PostEggInfoCommand(egg_info):
 setup(
     name="locust-swarm",
     version=version,
-    description="Load test distribution tool for Locust",
+    description="Load test + test data distribution & launching tool for Locust",
     long_description="""https://github.com/SvenskaSpel/locust-swarm""",
     classifiers=[
         "Topic :: Software Development :: Testing :: Traffic Generation",
