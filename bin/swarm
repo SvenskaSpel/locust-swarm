@@ -236,45 +236,47 @@ def start_worker_process(server):
         master_parameters = []
 
     procs = []
-    for i in range(args.processes_per_loadgen):
 
-        cmd = " ".join(
-            [
-                "ssh",
-                "-q",
-                *port_forwarding_parameters,
-                server,
-                "'",
-                "PYTHONUNBUFFERED=1",
-                *nohup,
-                "locust",
-                "--worker",
-                "--master-port",
-                str(port),
-                *master_parameters,
-                "--headless",
-                "-f",
-                testplan_filename,
-                *ensure_remote_kill,
-                "'",
-            ]
+    playwright = ["LOCUST_PLAYWRIGHT=1"] if args.playwright else []
+
+    cmd = " ".join(
+        [
+            "ssh",
+            "-q",
+            *port_forwarding_parameters,
+            server,
+            "'",
+            "PYTHONUNBUFFERED=1",
+            *playwright,
+            *nohup,
+            "parallel",
+            "-j0",
+            "-N0",
+            "locust",
+            "--worker",
+            "--master-port",
+            str(port),
+            *master_parameters,
+            "--headless",
+            "-f",
+            testplan_filename,
+            ":::",
+            "{1.." + str(args.processes_per_loadgen) + "}",
+            *ensure_remote_kill,
+            "'",
+        ]
+    )
+
+    logging.info("workers started" + cmd)
+    procs.append(
+        subprocess.Popen(
+            cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,  # dont forward CTRL-C, let locust quit the workers instead
         )
-
-        if i == 0:
-            logging.info("First worker: " + cmd)
-        else:
-            logging.debug("worker: " + cmd)
-
-        procs.append(
-            subprocess.Popen(
-                cmd,
-                shell=True,
-                stdin=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,  # dont forward CTRL-C, let locust quit the workers instead
-            )
-        )
-        port_forwarding_parameters = []  # only first ssh session should do port forwarding
+    )
     return procs
 
 
@@ -370,8 +372,11 @@ if args.loglevel:
     unrecognized_args.append("-L")
     unrecognized_args.append(args.loglevel)
 
+playwright = ["LOCUST_PLAYWRIGHT=1"] if args.playwright else []
+
 master_command = [
     *ssh_command,
+    *playwright,
     "locust",
     "--master",
     "--master-bind-port",

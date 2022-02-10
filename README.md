@@ -16,6 +16,7 @@ On the loadgens:
 
 ```
 pip install locust
+apt install parallel # or yum install or whatever matches your system
 # if you want to use locust-plugins:
 # pip install locust-plugins 
 # as swarm automatically copies locust-plugins to loadgens every time, you can then uninstall it, leaving only its dependencies:
