@@ -261,6 +261,7 @@ def start_worker_process(server):
             "parallel",
             "-j0",
             "-N0",
+            "--ungroup",
             "locust",
             "--worker",
             "--master-port",
