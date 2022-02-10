@@ -64,6 +64,13 @@ parser.add_argument(
     help="Start selenium server on load gens for use with locust-plugins's WebdriverUser",
 )
 parser.add_argument(
+    "--playwright",
+    action="store_true",
+    default=False,
+    help="Set LOCUST_PLAYWRIGHT env var for workers",
+    env_var="LOCUST_PLAYWRIGHT",
+)
+parser.add_argument(
     "--loadgens",
     "-l",
     type=int,
