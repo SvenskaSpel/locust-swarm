@@ -7,3 +7,4 @@ dist
 .mypy_cache
 .tox
 _version.py
+.eggs
