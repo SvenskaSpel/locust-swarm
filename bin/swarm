@@ -18,7 +18,7 @@ import psutil
 import configargparse
 import locust_plugins
 import locust.util.timespan
-import locust_swarm
+from locust_swarm._version import version
 
 
 logging.basicConfig(
@@ -129,7 +129,7 @@ parser.add_argument(
     "-V",
     action="version",
     help="Show program's version number and exit",
-    version="%(prog)s {}".format(locust_swarm.__version__),
+    version=f"%(prog)s {version}",
 )
 
 args, unrecognized_args = parser.parse_known_args()
