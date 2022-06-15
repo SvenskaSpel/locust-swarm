@@ -38,47 +38,38 @@ swarm -h
 ```
 
 ```
-usage: swarm [-h] [-f TESTPLAN] --loadgen-list LOADGEN_LIST
-             [--processes-per-loadgen PROCESSES_PER_LOADGEN] [--selenium]
-             [--loadgens LOADGENS] [-L LOGLEVEL] [--port PORT]
-             [--remote-master REMOTE_MASTER] [--version]
+usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST 
+             [--processes-per-loadgen PROCESSES_PER_LOADGEN] [--selenium] [--playwright]
+             [--test-env TEST_ENV] [--loadgens LOADGENS] [-L LOGLEVEL] [--port PORT]
+             [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [FILES ...]] [--version]
 
 A tool for running locust in a distributed fashion.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f TESTPLAN, --locustfile TESTPLAN
+  -f LOCUSTFILE, --locustfile LOCUSTFILE
                         [env var: LOCUST_LOCUSTFILE]
   --loadgen-list LOADGEN_LIST
-                        A comma-separated list of ssh servers to act as load
-                        generators [env var: LOCUST_LOADGEN_LIST]
+                        A comma-separated list of ssh servers on which to launch locust workers [env var: LOCUST_LOADGEN_LIST]
   --processes-per-loadgen PROCESSES_PER_LOADGEN, -p PROCESSES_PER_LOADGEN
-                        Number of locust worker processes to spawn for each
-                        load gen [env var: LOCUST_PROCESSES_PER_LOADGEN]
-  --selenium            Start selenium server on load gens for use with
-                        locust-plugins's WebdriverUser [env var:
-                        LOCUST_SELENIUM]
+                        Number of locust worker processes to spawn on each load gen [env var: LOCUST_PROCESSES_PER_LOADGEN]
+  --selenium            Start selenium server on load gens for use with locust-plugins's WebdriverUser [env var: LOCUST_SELENIUM]
+  --playwright          Set LOCUST_PLAYWRIGHT env var for workers [env var: LOCUST_PLAYWRIGHT]
+  --test-env TEST_ENV   Pass LOCUST_TEST_ENV to workers (in case your script needs it *before* argument parsing) [env var: LOCUST_TEST_ENV]
   --loadgens LOADGENS, -l LOADGENS
-                        Number of servers to launch workers on [env var:
-                        LOCUST_LOADGENS]
+                        Number of servers to run locust workers on [env var: LOCUST_LOADGENS]
   -L LOGLEVEL           Use DEBUG for tracing issues with load gens etc
   --port PORT           [env var: LOCUST_PORT]
   --remote-master REMOTE_MASTER
-                        An ssh server to use as locust master (default is to
-                        run the master on the same machine as swarm). This is
-                        useful when rurnning swarm on your workstation if it
-                        might become disconnected [env var:
-                        LOCUST_REMOTE_MASTER]
+                        An ssh server to use as locust master (default is to run the master on the same machine as swarm). This is useful when rurnning swarm on your workstation if it might become disconnected [env var: LOCUST_REMOTE_MASTER]
+  --extra-files EXTRA_FILES [EXTRA_FILES ...]
+                        A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv common.py my-directory/ [env var: LOCUST_EXTRA_FILES]
   --version, -V         Show program's version number and exit
 
-Any parameters not listed here are forwarded to locust master unmodified, so go ahead
-and use things like -u, -r, --host, ... Swarm config can also be set using
-config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
-Example: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f
-test.py -u 10
+Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like -u, -r, --host, ... Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf). Example:
+swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10
 
- If an arg is specified in more than one place, then commandline values
-override environment variables which override defaults.
+ If an arg is specified in more than one place, then commandline values override environment variables which override defaults.
 ```
 
 ## Example run

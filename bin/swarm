@@ -30,14 +30,23 @@ logging.basicConfig(
 parser = configargparse.ArgumentParser(
     # swarm is compatible with locust config files, but locust is not necessarily compatible
     # with swarm config files (it will give an error on swarm-specific settings), so we enable both
-    default_config_files=["~/.locust.conf", "locust.conf", "~/.swarm.conf", "swarm.conf"],
+    default_config_files=[
+        "~/.locust.conf",
+        "locust.conf",
+        "~/.swarm.conf",
+        "swarm.conf",
+    ],
     auto_env_var_prefix="LOCUST_",
     description="A tool for running locust in a distributed fashion.",
     epilog="Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like -u, -r, --host, ... Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).\nExample: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10",
     add_config_file_help=False,
 )
 
-parser.add_argument("-f", "--locustfile", type=str, dest="testplan")
+parser.add_argument(
+    "-f",
+    "--locustfile",
+    type=str,
+)
 parser.add_argument(
     "--headless",
     action="store_true",
@@ -103,6 +112,19 @@ parser.add_argument(
     env_var="LOCUST_RUN_TIME",
 )
 parser.add_argument(
+    "--extra-files",
+    nargs="+",
+    default=[],
+    help="A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv common.py my-directory/",
+)
+parser.add_argument(  # secret parameter to optimize by not uploading locust-plugins every time
+    "--skip-plugins",
+    action="store_true",
+    default=False,
+    help=configargparse.SUPPRESS,
+)
+
+parser.add_argument(
     "--version",
     "-V",
     action="version",
@@ -138,7 +160,7 @@ def check_output_multiple(list_of_commands):
         for process in running_procs:
             retcode = process.poll()
             if retcode is not None:  # Process finished.
-                running_procs.remove(process)
+                running_procs.remove(process)  #  pylint: disable=modified-iterating-list
                 if retcode != 0:
                     raise Exception(f"Bad return code {retcode} from command: {process.args}")
                 break
@@ -197,17 +219,18 @@ def cleanup(_args):
 
 
 def upload(server):
-    # upload test plan and any other files in the current directory (dont upload locust.conf because it might contain master-only settings like run-time)
-    check_output(f"rsync -qrt --exclude locust.conf --exclude *.png --exclude __pycache__ * {server}:")
-    # upload locust-plugins
-    check_output(f"rsync -qrt --exclude __pycache__ {locust_plugins.__path__[0]} {server}:")
-    # Use this to upload locust
-    # check_output(f"rsync -qr --exclude __pycache__ {locust.__path__[0]}/.. {server}:locust/")
-    try:
-        check_output(f"rsync -qrt --exclude __pycache__ {svs_locust.__path__[0]} {server}:")
-    except NameError:
-        pass
-    logging.debug(f"upload complete for {server}")
+    files = [args.locustfile or "locustfile.py"] + args.extra_files
+    if not args.skip_plugins:
+        files.append(os.path.dirname(locust_plugins.__file__))
+        try:
+            files.append(os.path.dirname(svs_locust.__file__))
+        except NameError:
+            pass
+    if len(files) > 1:
+        filestr = "{" + ",".join(files) + "}"
+    else:
+        filestr = files[0]
+    check_output(f"rsync -qrt --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
 
 
 def start_worker_process(server):
@@ -230,6 +253,9 @@ def start_worker_process(server):
         )
         time.sleep(1)
 
+    if args.playwright:
+        check_output(f"ssh -q {server} 'rm -rf tmp/* && pkill playwright.sh || true'")
+
     if args.remote_master:
         port_forwarding_parameters = []
         ensure_remote_kill = []
@@ -237,15 +263,22 @@ def start_worker_process(server):
         master_parameters = ["--master-host " + args.remote_master]
 
     else:
-        port_forwarding_parameters = ["-R", f"{port}:localhost:{port}", "-R", f"{port+1}:localhost:{port+1}"]
+        port_forwarding_parameters = [
+            "-R",
+            f"{port}:localhost:{port}",
+            "-R",
+            f"{port+1}:localhost:{port+1}",
+        ]
         ensure_remote_kill = ["& read; kill -9 $!"]
         nohup = []
         master_parameters = []
 
     procs = []
-    extra_env = ["PYTHONUNBUFFERED=1"]  #  pylint: disable=redefined-outer-name
+    extra_env = ["PYTHONUNBUFFERED=1"]
     if args.playwright:
-        extra_env.append("LOCUST_PLAYWRIGHT=1")
+        extra_env.append(
+            "LOCUST_PLAYWRIGHT=1 TEMPDIR=/home/lafp/tmp TMPDIR=/home/lafp/tmp TEMP=/home/lafp/tmp TMP=/home/lafp/tmp"
+        )
     if args.test_env:
         extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
 
@@ -268,8 +301,10 @@ def start_worker_process(server):
             str(port),
             *master_parameters,
             "--headless",
+            "--expect-workers-max-wait",
+            "30",
             "-f",
-            testplan_filename,
+            locustfile_filename,
             ":::",
             "{1.." + str(args.processes_per_loadgen) + "}",
             *ensure_remote_kill,
@@ -298,30 +333,35 @@ def sig_handler(_signo, _frame):
 if args.loglevel:
     logging.getLogger().setLevel(args.loglevel.upper())
 
-testplan = args.testplan or "locustfile.py"
+locustfile = args.locustfile or "locustfile.py"
 
-if "/" in testplan:
-    parser.error(
-        "Testplan (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
+if "/" in locustfile:
+    parser.error(  #  pylint: disable=not-callable
+        "Locustfile (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
     )
 
-testplan_filename = os.path.split(testplan)[1]
+locustfile_filename = os.path.split(locustfile)[1]
 port = int(args.port)
 processes_per_loadgen = args.processes_per_loadgen
 loadgens = args.loadgens
 if loadgens < 1:
-    parser.error("loadgens parameter must be 1 or higher")
+    parser.error("loadgens parameter must be 1 or higher")  #  pylint: disable=not-callable
 worker_process_count = processes_per_loadgen * loadgens
 loadgen_list = args.loadgen_list.split(",")
 
 try:
-    subprocess.check_output(f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1", shell=True)
+    subprocess.check_output(
+        f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1",
+        shell=True,
+        timeout=10,
+    )
 except subprocess.CalledProcessError as e:
     if "Host key verification failed." in str(e.stdout):
         # add all loadgens to known hosts
         for loadgen in loadgen_list:
             subprocess.check_output(
-                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true", shell=True
+                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true",
+                shell=True,
             )
     else:
         logging.error(
@@ -365,7 +405,7 @@ atexit.register(cleanup, args)
 os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
 
 if args.remote_master:
-    logging.info(f"Some argument passing will not work with remote master (broken since 2.0)")
+    logging.info("Some argument passing will not work with remote master (broken since 2.0)")
     ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
     if args.test_env:
         extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
@@ -402,7 +442,7 @@ master_command = [
     "60",
     "--headless",
     "-f",
-    testplan,
+    locustfile,
     *run_time_arg,
     "--exit-code-on-error",
     "0",  # return zero even if there were failed samples (locust default is to return 1)
