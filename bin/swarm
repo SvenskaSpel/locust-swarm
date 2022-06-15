@@ -18,7 +18,7 @@ import psutil
 import configargparse
 import locust_plugins
 import locust.util.timespan
-from locust_swarm._version import version
+from _version import version
 
 
 logging.basicConfig(

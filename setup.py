@@ -64,7 +64,7 @@ setup(
     scripts=["bin/swarm"],
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
     use_scm_version={
-        "write_to": "locust_swarm/_version.py",
+        "write_to": "_version.py",
         "local_scheme": "no-local-version",
     },
     setup_requires=["setuptools_scm"],
