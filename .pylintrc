@@ -1,9 +1,9 @@
 [FORMAT]
-max-line-length=300 # this rarely applies, because we always use black to autoformat shorter lines
+max-line-length=500 # this rarely applies, because we always use black to autoformat shorter lines
 
 [BASIC]
 # allow single letter variable names
 variable-rgx=[a-z0-9_]{1,30}$
 
 [MESSAGES CONTROL]
-disable=logging-not-lazy,logging-fstring-interpolation,missing-docstring,wildcard-import,unused-wildcard-import,invalid-name,logging-format-interpolation,broad-except,no-else-break,too-many-arguments
+disable=logging-not-lazy,logging-fstring-interpolation,missing-docstring,wildcard-import,unused-wildcard-import,invalid-name,logging-format-interpolation,broad-except,no-else-break,too-many-arguments,redefined-outer-name,not-callable,consider-using-f-string,consider-using-with
