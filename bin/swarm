@@ -115,7 +115,7 @@ parser.add_argument(
     "--extra-files",
     nargs="+",
     default=[],
-    help="A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv common.py my-directory/",
+    help="A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv *.py my-directory/",
 )
 parser.add_argument(  # secret parameter to optimize by not uploading locust-plugins every time
     "--skip-plugins",

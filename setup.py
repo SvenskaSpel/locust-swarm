@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import ast
-import re
 import os
 import sys
 
@@ -9,11 +7,6 @@ from setuptools import find_packages, setup
 from setuptools.command.install import install
 from setuptools.command.egg_info import egg_info
 from setuptools.command.develop import develop
-
-_version_re = re.compile(r"__version__\s+=\s+(.*)")
-_init_file = "locust_swarm/__init__.py"
-with open(_init_file, "rb") as f:
-    version = str(ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1)))
 
 
 class PostDevelopCommand(develop):
@@ -39,7 +32,6 @@ class PostEggInfoCommand(egg_info):
 
 setup(
     name="locust-swarm",
-    version=version,
     description="Load test + test data distribution & launching tool for Locust",
     long_description="""https://github.com/SvenskaSpel/locust-swarm""",
     classifiers=[
@@ -63,7 +55,17 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["keyring==21.4.0", "locust-plugins>=2.2.2", "psutil", "ConfigArgParse>=1.0"],
+    install_requires=[
+        "keyring==21.4.0",
+        "locust-plugins>=2.2.2",
+        "psutil",
+        "ConfigArgParse>=1.0",
+    ],
     scripts=["bin/swarm"],
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
+    use_scm_version={
+        "write_to": "locust_swarm/_version.py",
+        "local_scheme": "no-local-version",
+    },
+    setup_requires=["setuptools_scm"],
 )
