@@ -14,5 +14,12 @@
     "files.watcherExclude": {
         "**/target": true
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportOptionalSubscript": "none",
+        "reportOptionalMemberAccess": "none",
+        "reportPrivateImportUsage": "none"
+    },
 }

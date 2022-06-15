@@ -13,7 +13,7 @@
             "cwd": "/Users/lafp/git/performance/locust",
             "args": [
                 "-f",
-                "racing.py",
+                "demo.py",
                 "-L",
                 "DEBUG",
             ],
