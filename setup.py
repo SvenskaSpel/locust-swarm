@@ -61,7 +61,9 @@ setup(
         "psutil",
         "ConfigArgParse>=1.0",
     ],
-    scripts=["bin/swarm"],
+    entry_points={
+        "console_scripts": ["swarm = locust_swarm.__main__:main"],
+    },
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
     use_scm_version={
         "write_to": "locust_swarm/_version.py",

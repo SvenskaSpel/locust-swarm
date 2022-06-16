@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 try:
     import svs_locust  # pylint: disable=import-outside-toplevel
 except ModuleNotFoundError:
@@ -18,7 +17,7 @@ import psutil
 import configargparse
 import locust_plugins
 import locust.util.timespan
-from locust_swarm._version import version
+from ._version import version
 
 
 logging.basicConfig(
