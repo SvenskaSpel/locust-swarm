@@ -8,7 +8,7 @@
             "name": "swarm",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/swarm",
+            "program": "/usr/local/bin/swarm",
             "console": "integratedTerminal",
             "cwd": "/Users/lafp/git/performance/locust",
             "args": [

@@ -61,7 +61,7 @@ setup(
         "psutil",
         "ConfigArgParse>=1.0",
     ],
-    scripts=["swarm"],
+    scripts=["bin/swarm"],
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
     use_scm_version={
         "write_to": "_version.py",
