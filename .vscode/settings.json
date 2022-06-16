@@ -8,7 +8,9 @@
         "**/build": true,
         "**/dist": true,
         "**/.mypy_cache": true,
-        "**/.tox": true
+        "**/.tox": true,
+        "**/_version.py": true,
+        "**/.eggs": true
     },
     "python.linting.pylintEnabled": true,
     "files.watcherExclude": {

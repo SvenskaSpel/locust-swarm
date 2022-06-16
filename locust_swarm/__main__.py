@@ -17,7 +17,7 @@ import psutil
 import configargparse
 import locust_plugins
 import locust.util.timespan
-from ._version import version
+from locust_swarm._version import version
 
 
 logging.basicConfig(
@@ -198,7 +198,7 @@ def check_and_lock_server(server):
     )
 
 
-def cleanup(_args):
+def cleanup(server_list):
     logging.debug("cleanup started")
     procs = psutil.Process().children()
     for p in procs:
@@ -232,7 +232,7 @@ def upload(server):
     check_output(f"rsync -qrt --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
 
 
-def start_worker_process(server):
+def start_worker_process(server, port, locustfile_filename):
     upload(server)
 
     if args.selenium:
@@ -329,174 +329,173 @@ def sig_handler(_signo, _frame):
     sys.exit(0)
 
 
-if args.loglevel:
-    logging.getLogger().setLevel(args.loglevel.upper())
+def main():
+    if args.loglevel:
+        logging.getLogger().setLevel(args.loglevel.upper())
 
-locustfile = args.locustfile or "locustfile.py"
+    locustfile = args.locustfile or "locustfile.py"
 
-if "/" in locustfile:
-    parser.error(  #  pylint: disable=not-callable
-        "Locustfile (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
-    )
-
-locustfile_filename = os.path.split(locustfile)[1]
-port = int(args.port)
-processes_per_loadgen = args.processes_per_loadgen
-loadgens = args.loadgens
-if loadgens < 1:
-    parser.error("loadgens parameter must be 1 or higher")  #  pylint: disable=not-callable
-worker_process_count = processes_per_loadgen * loadgens
-loadgen_list = args.loadgen_list.split(",")
-
-try:
-    subprocess.check_output(
-        f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1",
-        shell=True,
-        timeout=10,
-    )
-except subprocess.CalledProcessError as e:
-    if "Host key verification failed." in str(e.stdout):
-        # add all loadgens to known hosts
-        for loadgen in loadgen_list:
-            subprocess.check_output(
-                f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true",
-                shell=True,
-            )
-    else:
-        logging.error(
-            f"Error ssh:ing to loadgen ({loadgen_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
+    if "/" in locustfile:
+        parser.error(  #  pylint: disable=not-callable
+            "Locustfile (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
         )
-        raise
 
-signal.signal(signal.SIGTERM, sig_handler)
+    locustfile_filename = os.path.split(locustfile)[1]
+    port = int(args.port)
+    processes_per_loadgen = args.processes_per_loadgen
+    loadgens = args.loadgens
+    if loadgens < 1:
+        parser.error("loadgens parameter must be 1 or higher")  #  pylint: disable=not-callable
+    worker_process_count = processes_per_loadgen * loadgens
+    loadgen_list = args.loadgen_list.split(",")
 
-while is_port_in_use(port):
-    port += 2
-
-
-def get_available_servers_and_lock_them():
-    attempts = 0
-    check_interval = 25
-    while True:
-        available_servers = []
-        for server in loadgen_list:
-            if check_and_lock_server(server):
-                available_servers.append(server)
-            if len(available_servers) == loadgens:
-                return available_servers
-        logging.info(
-            f"Only found {len(available_servers)} available servers, wanted {loadgens}. Will try again in {check_interval} seconds..."
-        )
-        available_servers = []
-        time.sleep(check_interval)
-        attempts += 1
-        if attempts > 5:
-            raise Exception("Never found enough servers :(")
-
-
-server_list = get_available_servers_and_lock_them()
-
-worker_procs = []
-extra_env = []
-start_time = datetime.now(timezone.utc)
-atexit.register(cleanup, args)
-
-os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
-
-if args.remote_master:
-    logging.info("Some argument passing will not work with remote master (broken since 2.0)")
-    ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
-    if args.test_env:
-        extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
-    bind_only_localhost = []
-    ssh_command_end = ["'"]
-    check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
-    upload(args.remote_master)
-else:
-    # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
-    bind_only_localhost = ["--master-bind-host=127.0.0.1"]
-    ssh_command = []
-    ssh_command_end = []
-
-run_time_arg = ["--run-time=" + args.run_time] if args.run_time else []
-
-if args.loglevel:
-    unrecognized_args.append("-L")
-    unrecognized_args.append(args.loglevel)
-
-if args.playwright:
-    extra_env.append("LOCUST_PLAYWRIGHT=1")
-
-master_command = [
-    *ssh_command,
-    *extra_env,
-    "locust",
-    "--master",
-    "--master-bind-port",
-    str(port),
-    *bind_only_localhost,
-    "--expect-workers",
-    str(worker_process_count),
-    "--expect-workers-max-wait",
-    "60",
-    "--headless",
-    "-f",
-    locustfile,
-    *run_time_arg,
-    "--exit-code-on-error",
-    "0",  # return zero even if there were failed samples (locust default is to return 1)
-    *unrecognized_args,
-    *ssh_command_end,
-]
-
-logging.info(f"launching master: {' '.join(master_command)}")
-master_proc = subprocess.Popen(" ".join(master_command), shell=True)
-
-for server in server_list:
-    # fail early if master has already terminated
-    check_proc_running(master_proc)
-    worker_procs.extend(start_worker_process(server))
-
-# check that worker procs didnt immediately terminate for some reason (like invalid parameters)
-try:
-    time.sleep(5)
-except KeyboardInterrupt:  # dont give strange callstack if interrupted
-    sys.exit(1)
-
-for proc in worker_procs:
-    check_proc_running(proc)
-
-logging.debug("all workers seem to have launched fine")
-
-start_time = time.time()
-max_run_time = locust.util.timespan.parse_timespan(args.run_time) if args.run_time else float("inf")
-
-# wait for test to complete
-while True:
     try:
-        code = master_proc.wait(timeout=10)
-        break
-    except subprocess.TimeoutExpired:
-        if max_run_time + 31 < time.time() - start_time:
-            logging.error(
-                f"Locust exceeded the run time specified ({max_run_time}) by more than 30 seconds, giving up"
-            )  #  pylint: disable=raise-missing-from
-            master_proc.send_signal(1)
-    except KeyboardInterrupt:
-        pass
-    # ensure worker procs didnt die before master
-    for proc in worker_procs:
-        try:
-            check_proc_running(proc)
-        except subprocess.CalledProcessError as e:
-            try:
-                code = master_proc.wait(timeout=10)
-                break
-            except subprocess.TimeoutExpired:
-                logging.error(
-                    f"worker proc finished unexpectedly with ret code {e.returncode} (and master was still running)"
+        subprocess.check_output(
+            f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1",
+            shell=True,
+            timeout=10,
+        )
+    except subprocess.CalledProcessError as e:
+        if "Host key verification failed." in str(e.stdout):
+            # add all loadgens to known hosts
+            for loadgen in loadgen_list:
+                subprocess.check_output(
+                    f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true",
+                    shell=True,
                 )
-                raise
+        else:
+            logging.error(
+                f"Error ssh:ing to loadgen ({loadgen_list[0]}). Maybe you dont have permission to log on to them? Or your ssh key requires a password? (in that case, use ssh-agent)"
+            )
+            raise
 
-logging.info(f"Load gen master process finished (return code {code})")
-sys.exit(code)
+    signal.signal(signal.SIGTERM, sig_handler)
+
+    while is_port_in_use(port):
+        port += 2
+
+    def get_available_servers_and_lock_them():
+        attempts = 0
+        check_interval = 25
+        while True:
+            available_servers = []
+            for server in loadgen_list:
+                if check_and_lock_server(server):
+                    available_servers.append(server)
+                if len(available_servers) == loadgens:
+                    return available_servers
+            logging.info(
+                f"Only found {len(available_servers)} available servers, wanted {loadgens}. Will try again in {check_interval} seconds..."
+            )
+            available_servers = []
+            time.sleep(check_interval)
+            attempts += 1
+            if attempts > 5:
+                raise Exception("Never found enough servers :(")
+
+    server_list = get_available_servers_and_lock_them()
+
+    worker_procs = []
+    extra_env = []
+    start_time = datetime.now(timezone.utc)
+    atexit.register(cleanup, server_list)
+
+    os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
+
+    if args.remote_master:
+        logging.info("Some argument passing will not work with remote master (broken since 2.0)")
+        ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
+        if args.test_env:
+            extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
+        bind_only_localhost = []
+        ssh_command_end = ["'"]
+        check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
+        upload(args.remote_master)
+    else:
+        # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
+        bind_only_localhost = ["--master-bind-host=127.0.0.1"]
+        ssh_command = []
+        ssh_command_end = []
+
+    run_time_arg = ["--run-time=" + args.run_time] if args.run_time else []
+
+    if args.loglevel:
+        unrecognized_args.append("-L")
+        unrecognized_args.append(args.loglevel)
+
+    if args.playwright:
+        extra_env.append("LOCUST_PLAYWRIGHT=1")
+
+    master_command = [
+        *ssh_command,
+        *extra_env,
+        "locust",
+        "--master",
+        "--master-bind-port",
+        str(port),
+        *bind_only_localhost,
+        "--expect-workers",
+        str(worker_process_count),
+        "--expect-workers-max-wait",
+        "60",
+        "--headless",
+        "-f",
+        locustfile,
+        *run_time_arg,
+        "--exit-code-on-error",
+        "0",  # return zero even if there were failed samples (locust default is to return 1)
+        *unrecognized_args,
+        *ssh_command_end,
+    ]
+
+    logging.info(f"launching master: {' '.join(master_command)}")
+    master_proc = subprocess.Popen(" ".join(master_command), shell=True)
+
+    for server in server_list:
+        # fail early if master has already terminated
+        check_proc_running(master_proc)
+        worker_procs.extend(start_worker_process(server, port, locustfile_filename))
+
+    # check that worker procs didnt immediately terminate for some reason (like invalid parameters)
+    try:
+        time.sleep(5)
+    except KeyboardInterrupt:  # dont give strange callstack if interrupted
+        sys.exit(1)
+
+    for proc in worker_procs:
+        check_proc_running(proc)
+
+    logging.debug("all workers seem to have launched fine")
+
+    start_time = time.time()
+    max_run_time = locust.util.timespan.parse_timespan(args.run_time) if args.run_time else float("inf")
+
+    # wait for test to complete
+    while True:
+        try:
+            code = master_proc.wait(timeout=10)
+            break
+        except subprocess.TimeoutExpired:
+            if max_run_time + 31 < time.time() - start_time:
+                logging.error(
+                    f"Locust exceeded the run time specified ({max_run_time}) by more than 30 seconds, giving up"
+                )  #  pylint: disable=raise-missing-from
+                master_proc.send_signal(1)
+        except KeyboardInterrupt:
+            pass
+        # ensure worker procs didnt die before master
+        for proc in worker_procs:
+            try:
+                check_proc_running(proc)
+            except subprocess.CalledProcessError as e:
+                try:
+                    code = master_proc.wait(timeout=10)
+                    break
+                except subprocess.TimeoutExpired:
+                    logging.error(
+                        f"worker proc finished unexpectedly with ret code {e.returncode} (and master was still running)"
+                    )
+                    raise
+
+    logging.info(f"Load gen master process finished (return code {code})")
+    sys.exit(code)
