@@ -62,7 +62,7 @@ setup(
         "ConfigArgParse>=1.0",
     ],
     entry_points={
-        "console_scripts": ["swarm = locust_swarm.__main__:main"],
+        "console_scripts": ["swarm = locust_swarm.swarm:main"],
     },
     cmdclass={"egg_info": PostEggInfoCommand, "install": PostInstallCommand, "develop": PostDevelopCommand},
     use_scm_version={
