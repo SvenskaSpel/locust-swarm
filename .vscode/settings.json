@@ -17,6 +17,9 @@
         "**/target": true
     },
     "editor.formatOnSave": true,
+    "[python]": {
+        "editor.formatOnPaste": false
+    },
     "python.languageServer": "Pylance",
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.diagnosticSeverityOverrides": {
