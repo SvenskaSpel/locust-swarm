@@ -111,6 +111,14 @@ parser.add_argument(
     env_var="LOCUST_RUN_TIME",
 )
 parser.add_argument(
+    "-i",
+    "--iterations",
+    help=configargparse.SUPPRESS,
+    type=int,
+    env_var="LOCUST_ITERATIONS",
+    default=0,
+)
+parser.add_argument(
     "--extra-files",
     nargs="+",
     default=[],
@@ -272,6 +280,10 @@ def start_worker_process(server, port, locustfile_filename):
         nohup = []
         master_parameters = []
 
+    if args.loglevel:
+        master_parameters.append("-L")
+        master_parameters.append(args.loglevel)
+
     procs = []
     extra_env = ["PYTHONUNBUFFERED=1"]
     if args.playwright:
@@ -418,6 +430,14 @@ def main():
         ssh_command_end = []
 
     run_time_arg = ["--run-time=" + args.run_time] if args.run_time else []
+
+    if args.iterations:
+        unrecognized_args.append("-i")
+        unrecognized_args.append(str(int(args.iterations / worker_process_count)))
+        if args.iterations % worker_process_count:
+            logging.warning(
+                f"Iteration limit was not evenly divisible between workers, so you will end up with {args.iterations % worker_process_count} fewer iterations than requested"
+            )
 
     if args.loglevel:
         unrecognized_args.append("-L")
