@@ -412,6 +412,7 @@ def main():
     start_time = datetime.now(timezone.utc)
     atexit.register(cleanup, server_list)
 
+    # needed for compatibility with locust-plugins < 2.6.11. We can remove this at some point in the future
     os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
 
     if args.remote_master:
