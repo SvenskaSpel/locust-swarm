@@ -266,7 +266,7 @@ def start_worker_process(server, port, locustfile_filename):
     if args.remote_master:
         port_forwarding_parameters = []
         ensure_remote_kill = []
-        nohup = ["nohup"]
+        nohup = ["sudo", "-E", "nohup"]
         master_parameters = ["--master-host " + args.remote_master]
 
     else:
@@ -417,9 +417,10 @@ def main():
 
     if args.remote_master:
         logging.info("Some argument passing will not work with remote master (broken since 2.0)")
-        ssh_command = ["ssh", "-q", args.remote_master, "'", "PYTHONUNBUFFERED=1", "nohup"]
+        env_vars = ["PYTHONUNBUFFERED=1"]
         if args.test_env:
-            extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
+            env_vars.append("LOCUST_TEST_ENV=" + args.test_env)
+        ssh_command = ["ssh", "-q", args.remote_master, "'", *env_vars, "sudo", "-E", "nohup"]
         bind_only_localhost = []
         ssh_command_end = ["'"]
         check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
