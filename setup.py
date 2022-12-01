@@ -11,16 +11,6 @@ from setuptools.command.develop import develop
 
 
 def install_check(self, command):
-    try:
-        import locust_plugins  # noqa
-
-        major, minor, _patch = locust_plugins.__version__.split(".")
-        if int(major) < 2 or int(major) == 2 and int(minor) < 7:
-            sys.exit(
-                "Please update (or uninstall) locust-plugins, your version is not compatible with this version of locust-swarm"
-            )
-    except ImportError:
-        pass  # plugins wasnt installed, no worries
     if os.name == "nt":
         sys.exit("Looks like you are on windows. Only MacOS and Linux are supported :(")
     command.run(self)
@@ -40,6 +30,16 @@ class PostEggInfoCommand(egg_info):
     def run(self):
         install_check(self, egg_info)
 
+
+requirement_list = [
+    "keyring==21.4.0",
+    "psutil",
+    "ConfigArgParse>=1.0",
+]
+# if locust-plugins IS installed, then require a version known to work with this version of swarm.
+spec = importlib.util.find_spec("locust_plugins")
+if spec is not None:
+    requirement_list.append("locust-plugins>=2.7.0")
 
 setup(
     name="locust-swarm",
@@ -68,11 +68,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        "keyring==21.4.0",
-        "psutil",
-        "ConfigArgParse>=1.0",
-    ],
+    install_requires=requirement_list,
     entry_points={
         "console_scripts": ["swarm = locust_swarm.swarm:main"],
     },
