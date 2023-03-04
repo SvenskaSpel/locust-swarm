@@ -1,3 +1,7 @@
+[![PyPI](https://img.shields.io/pypi/v/locust-swarm.svg)](https://pypi.org/project/locust-swarm/)
+[![PyPI](https://img.shields.io/pypi/pyversions/locust-swarm.svg)](https://pypi.org/project/locust-swarm/)
+[![Build Status](https://github.com/SvenskaSpel/locust-swarm/workflows/Tests/badge.svg)](https://github.com/SvenskaSpel/locust-swarm/actions?query=workflow%3ATests)
+
 # Swarm
 
 Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers, using SSH.
