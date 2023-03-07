@@ -286,9 +286,10 @@ def start_worker_process(server, port, locustfile_filename):
 
     procs = []
     extra_env = ["PYTHONUNBUFFERED=1"]
+
     if args.playwright:
         extra_env.append(
-            "LOCUST_PLAYWRIGHT=1 TEMPDIR=/home/lafp/tmp TMPDIR=/home/lafp/tmp TEMP=/home/lafp/tmp TMP=/home/lafp/tmp"
+            "LOCUST_PLAYWRIGHT=1"
         )
     if args.test_env:
         extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
