@@ -240,7 +240,11 @@ def upload(server):
         filestr = "{" + ",".join(files) + "}"
     else:
         filestr = files[0]
-    check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
+
+    if args.loglevel.upper() == "DEBUG":
+        check_output(f"rsync -vvrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
+    else:
+        check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
 
 
 def start_worker_process(server, port, locustfile_filename):
