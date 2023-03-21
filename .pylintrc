@@ -7,4 +7,4 @@ variable-rgx=[a-z0-9_]{1,30}$
 dummy-variables-rgx=(_+[a-zA-Z0-9]*?$)|dummy|resp|e
 
 [MESSAGES CONTROL]
-disable=logging-not-lazy,logging-fstring-interpolation,missing-docstring,wildcard-import,unused-wildcard-import,invalid-name,logging-format-interpolation,broad-except,no-else-break,too-many-arguments,redefined-outer-name,not-callable,consider-using-f-string,consider-using-with,too-many-locals,too-many-branches,too-many-statements,broad-exception-raised
+disable=logging-not-lazy,logging-fstring-interpolation,missing-docstring,wildcard-import,unused-wildcard-import,invalid-name,logging-format-interpolation,broad-except,no-else-break,too-many-arguments,redefined-outer-name,not-callable,consider-using-f-string,consider-using-with,too-many-locals,too-many-branches,too-many-statements,broad-exception-raised,global-statement
