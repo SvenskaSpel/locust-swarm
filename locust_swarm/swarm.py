@@ -140,6 +140,7 @@ parser.add_argument(
 )
 
 args, unrecognized_args = parser.parse_known_args()
+master_proc = None
 
 
 def is_port_in_use(portno: int):
@@ -154,6 +155,8 @@ def check_output(command):
     except subprocess.CalledProcessError as e:
         logging.error(f"command failed: {command}")
         logging.error(e.output.decode().strip())
+        if master_proc:
+            master_proc.kill()
         raise
 
 
@@ -341,6 +344,7 @@ def sig_handler(_signo, _frame):
 
 
 def main():
+    global master_proc
     if args.loglevel:
         logging.getLogger().setLevel(args.loglevel.upper())
 
