@@ -94,6 +94,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "-L",
+    "--loglevel",
     type=str,
     dest="loglevel",
     help="Use DEBUG for tracing issues with load gens etc",
