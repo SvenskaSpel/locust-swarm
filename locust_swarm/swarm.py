@@ -242,7 +242,7 @@ def upload(server):
         filestr = files[0]
 
     if args.loglevel and args.loglevel.upper() == "DEBUG":
-        check_output(f"rsync -vvrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
+        check_output(f"shopt -s failglob; rsync -vvrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
     else:
         check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
 
