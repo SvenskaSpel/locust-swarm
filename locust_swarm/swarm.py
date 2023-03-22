@@ -93,10 +93,9 @@ parser.add_argument(
     help="Number of servers to run locust workers on",
 )
 parser.add_argument(
-    "-L",
     "--loglevel",
+    "-L",
     type=str,
-    dest="loglevel",
     help="Use DEBUG for tracing issues with load gens etc",
 )
 parser.add_argument("--port", type=str, default="5557")
