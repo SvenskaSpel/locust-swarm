@@ -151,7 +151,7 @@ def is_port_in_use(portno: int):
 def check_output(command):
     logging.debug(command)
     try:
-        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, executable="/bin/bash")
     except subprocess.CalledProcessError as e:
         logging.error(f"command failed: {command}")
         logging.error(e.output.decode().strip())
@@ -242,7 +242,6 @@ def upload(server):
         filestr = files[0]
 
     if args.loglevel and args.loglevel.upper() == "DEBUG":
-        check_output(f"ls -l {filestr}")
         check_output(f"shopt -s failglob; rsync -vvrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
     else:
         check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
