@@ -241,7 +241,7 @@ def upload(server):
     else:
         filestr = files[0]
 
-    if args.loglevel.upper() == "DEBUG":
+    if args.loglevel and args.loglevel.upper() == "DEBUG":
         check_output(f"rsync -vvrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
     else:
         check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
