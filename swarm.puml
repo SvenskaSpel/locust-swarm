@@ -1,0 +1,38 @@
+@startuml
+!theme crt-amber
+title Swarm
+
+' override ordering
+participant master
+participant loadgens
+participant SUT #99FF99
+participant Timescale
+
+== Aquire loadgens ==
+
+master -> loadgens: Check availability (ssh)
+
+master -> loadgens: Start semaphore process \nto reserve loadgen (ssh)
+
+== Prepare your SUT, test data etc ==
+
+master -> loadgens: Upload test plan and (optionally) test data files (rsync)
+
+== Generate load ==
+master -> loadgens: Start locust (ssh)
+
+group Locust
+loadgens -[#green]> SUT: Actual load (http, kafka, ...)
+
+    loadgens -->> Timescale: Log sample data
+  
+end
+
+== Postprocessing ==
+
+master -> Timescale: Validate thresholds (response times, error rates, etc),\ncalculate and save aggregated metrics
+
+== View the report in Grafana ==
+
+||12||
+@enduml

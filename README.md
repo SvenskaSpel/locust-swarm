@@ -155,7 +155,13 @@ Percentage of the requests completed within given times
 2019-09-20:13:46:25,184 INFO [swarm:201] Load gen master process finished (return code 0)
 ```
 
-As you can tell, the output is a bit chatty. The best way to see your results is using the TimescaleListener and grafana dashboard (see [listeners.py](https://github.com/SvenskaSpel/locust-plugins/blob/master/locust_plugins/listeners.py)). If you do that, then links will automatically be added to the output as seen above.
+Swarm runs the locust master in headless mode by default, but you can set `--headful` if you still want to use the Locust web UI.
+
+I find the best way to view and analyze results is with [Locust Dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards), the Timescale/Grafana-based solution provided by [locust-plugins](https://github.com/SvenskaSpel/locust-plugins/).
+
+Here's a sequence diagram of how swarm works:
+
+![Sequence diagram](swarm.png)
 
 ## Contributions
 
