@@ -1,4 +1,5 @@
 @startuml
+' consider switching to Mermaid?
 !theme crt-amber
 title Swarm
 
