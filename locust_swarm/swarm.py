@@ -105,6 +105,12 @@ parser.add_argument(
     help="An ssh server to use as locust master (default is to run the master on the same machine as swarm). This is useful when rurnning swarm on your workstation if it might become disconnected",
 )
 parser.add_argument(
+    "--exit-timeout",
+    type=int,
+    default=31,
+    help=configargparse.SUPPRESS,
+)
+parser.add_argument(
     "-t",
     "--run-time",
     help=configargparse.SUPPRESS,
@@ -505,7 +511,7 @@ def main():
             code = master_proc.wait(timeout=10)
             break
         except subprocess.TimeoutExpired:
-            if max_run_time + 31 < time.time() - start_time:
+            if max_run_time + args.exit_timeout < time.time() - start_time:
                 logging.error(
                     f"Locust exceeded the run time specified ({max_run_time}) by more than 30 seconds, giving up"
                 )  #  pylint: disable=raise-missing-from
