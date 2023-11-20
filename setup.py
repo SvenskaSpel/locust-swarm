@@ -35,7 +35,7 @@ requirement_list = [
     "keyring==21.4.0",
     "psutil",
     "ConfigArgParse>=1.7",
-    "locust>=2.18.5.dev11",
+    "locust>=2.18.5.dev8",
 ]
 # if locust-plugins IS installed, then require a version known to work with this version of swarm.
 spec = importlib.util.find_spec("locust_plugins")
@@ -54,7 +54,6 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
