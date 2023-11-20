@@ -20,7 +20,6 @@ On the loadgens:
 
 ```
 pip install locust
-apt install parallel # or yum install or whatever matches your system
 # if you want to use locust-plugins:
 # pip install locust-plugins 
 # as swarm automatically copies locust-plugins to loadgens every time, you can then uninstall it, leaving only its dependencies:
@@ -42,39 +41,39 @@ swarm -h
 ```
 
 ```
-usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST 
-             [--processes-per-loadgen PROCESSES_PER_LOADGEN] [--selenium] [--playwright]
-             [--test-env TEST_ENV] [--loadgens LOADGENS] [-L LOGLEVEL] [--port PORT]
-             [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [FILES ...]] [--version]
+usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGENS] [--processes PROCESSES] [--selenium] [--playwright] [--test-env TEST_ENV] [--loglevel LOGLEVEL] [--port PORT] [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [EXTRA_FILES ...]] [--version]
 
-A tool for running locust in a distributed fashion.
+A tool for automating distributed locust runs using ssh.
 
-optional arguments:
+Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --loadgens 2 --users 50
+
+options:
   -h, --help            show this help message and exit
   -f LOCUSTFILE, --locustfile LOCUSTFILE
-                        [env var: LOCUST_LOCUSTFILE]
   --loadgen-list LOADGEN_LIST
-                        A comma-separated list of ssh servers on which to launch locust workers [env var: LOCUST_LOADGEN_LIST]
-  --processes-per-loadgen PROCESSES_PER_LOADGEN, -p PROCESSES_PER_LOADGEN
-                        Number of locust worker processes to spawn on each load gen [env var: LOCUST_PROCESSES_PER_LOADGEN]
-  --selenium            Start selenium server on load gens for use with locust-plugins's WebdriverUser [env var: LOCUST_SELENIUM]
-  --playwright          Set LOCUST_PLAYWRIGHT env var for workers [env var: LOCUST_PLAYWRIGHT]
-  --test-env TEST_ENV   Pass LOCUST_TEST_ENV to workers (in case your script needs it *before* argument parsing) [env var: LOCUST_TEST_ENV]
+                        A comma-separated list of ssh servers on which to launch locust workers
   --loadgens LOADGENS, -l LOADGENS
-                        Number of servers to run locust workers on [env var: LOCUST_LOADGENS]
-  -L LOGLEVEL           Use DEBUG for tracing issues with load gens etc
-  --port PORT           [env var: LOCUST_PORT]
+                        Number of servers to run locust workers on
+  --processes PROCESSES
+                        This is passed on to locust unchanged and determines the number of worker processes per load generator.
+  --selenium            Start selenium server on load gens for use with locust-plugins's WebdriverUser
+  --playwright          Set LOCUST_PLAYWRIGHT env var for workers
+  --test-env TEST_ENV   Pass LOCUST_TEST_ENV to workers (in case your script needs it *before* argument parsing)
+  --loglevel LOGLEVEL, -L LOGLEVEL
+                        Use DEBUG for tracing issues with load gens etc
+  --port PORT
   --remote-master REMOTE_MASTER
-                        An ssh server to use as locust master (default is to run the master on the same machine as swarm). This is useful when rurnning swarm on your workstation if it might become disconnected [env var: LOCUST_REMOTE_MASTER]
+                        An ssh server to use as locust master (default is to run the master locally). This is useful to prevent interrupting the load test if your workstation gets disconnected/goes to sleep.
   --extra-files EXTRA_FILES [EXTRA_FILES ...]
-                        A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv common.py my-directory/ [env var: LOCUST_EXTRA_FILES]
+                        A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv *.py my-directory/
   --version, -V         Show program's version number and exit
 
-Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like -u, -r, --host, ... Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf). Example:
-swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10
+Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
 
- If an arg is specified in more than one place, then commandline values override environment variables which override defaults.
+Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
+Parameters specified on command line override env vars, which in turn override config files.
 ```
+
 
 ## Example run
 

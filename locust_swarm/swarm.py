@@ -36,9 +36,16 @@ parser = configargparse.ArgumentParser(
         "swarm.conf",
     ],
     auto_env_var_prefix="LOCUST_",
-    description="A tool for running locust in a distributed fashion.",
-    epilog="Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like -u, -r, --host, ... Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).\nExample: swarm --loadgen-list loadgen1.domain.com,loadgen2.domain.com -f test.py -u 10",
+    formatter_class=configargparse.RawDescriptionHelpFormatter,
+    description="""A tool for automating distributed locust runs using ssh.
+
+Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --loadgens 2 --users 50""",
+    epilog="""Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
+    
+Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
+Parameters specified on command line override env vars, which in turn override config files.""",
     add_config_file_help=False,
+    add_env_var_help=False,
 )
 
 parser.add_argument(
@@ -59,12 +66,26 @@ parser.add_argument(
     help="A comma-separated list of ssh servers on which to launch locust workers",
 )
 parser.add_argument(
+    "--loadgens",
+    "-l",
+    type=int,
+    default=1,
+    help="Number of servers to run locust workers on",
+)
+parser.add_argument(
     "--processes-per-loadgen",
     "-p",
     type=int,
-    default=4,
-    help="Number of locust worker processes to spawn on each load gen",
+    default=0,
+    help=configargparse.SUPPRESS,
 )
+parser.add_argument(
+    "--processes",
+    type=int,
+    default=4,
+    help="This is passed on to locust unchanged and determines the number of worker processes per load generator.",
+)
+
 parser.add_argument(
     "--selenium",
     action="store_true",
@@ -86,13 +107,6 @@ parser.add_argument(
     env_var="LOCUST_TEST_ENV",
 )
 parser.add_argument(
-    "--loadgens",
-    "-l",
-    type=int,
-    default=1,
-    help="Number of servers to run locust workers on",
-)
-parser.add_argument(
     "--loglevel",
     "-L",
     type=str,
@@ -102,7 +116,7 @@ parser.add_argument("--port", type=str, default="5557")
 parser.add_argument(
     "--remote-master",
     type=str,
-    help="An ssh server to use as locust master (default is to run the master on the same machine as swarm). This is useful when rurnning swarm on your workstation if it might become disconnected",
+    help="An ssh server to use as locust master (default is to run the master locally). This is useful to prevent interrupting the load test if your workstation gets disconnected/goes to sleep.",
 )
 parser.add_argument(
     "--exit-timeout",
@@ -314,12 +328,10 @@ def start_worker_process(server, port, locustfile_filename):
             "'",
             *extra_env,
             *nohup,
-            "parallel",
-            "-j0",
-            "-N0",
-            "--ungroup",
             "locust",
             "--worker",
+            "--processes",
+            str(args.processes),
             "--master-port",
             str(port),
             *master_parameters,
@@ -328,8 +340,6 @@ def start_worker_process(server, port, locustfile_filename):
             "30",
             "-f",
             locustfile_filename,
-            ":::",
-            "{1.." + str(args.processes_per_loadgen) + "}",
             *ensure_remote_kill,
             "'",
         ]
@@ -367,11 +377,13 @@ def main():
 
     locustfile_filename = os.path.split(locustfile)[1]
     port = int(args.port)
-    processes_per_loadgen = args.processes_per_loadgen
-    loadgens = args.loadgens
-    if loadgens < 1:
-        parser.error("loadgens parameter must be 1 or higher")  #  pylint: disable=not-callable
-    worker_process_count = processes_per_loadgen * loadgens
+    if args.processes_per_loadgen:
+        parser.error(
+            f"--processes-per-loadgen has been removed in favour of locusts native --processes parameter (you had it set to {args.processes_per_loadgen})"
+        )
+    if args.loadgens < 1:
+        parser.error("loadgens parameter must be 1 or higher")
+    worker_process_count = args.processes * args.loadgens
     loadgen_list = args.loadgen_list.split(",")
 
     try:
@@ -407,10 +419,10 @@ def main():
             for server in loadgen_list:
                 if check_and_lock_server(server):
                     available_servers.append(server)
-                if len(available_servers) == loadgens:
+                if len(available_servers) == args.loadgens:
                     return available_servers
             logging.info(
-                f"Only found {len(available_servers)} available servers, wanted {loadgens}. Will try again in {check_interval} seconds..."
+                f"Only found {len(available_servers)} available servers, wanted {args.loadgens}. Will try again in {check_interval} seconds..."
             )
             available_servers = []
             time.sleep(check_interval)
@@ -424,9 +436,6 @@ def main():
     extra_env = []
     start_time = datetime.now(timezone.utc)
     atexit.register(cleanup, server_list)
-
-    # needed for compatibility with locust-plugins < 2.6.11. We can remove this at some point in the future
-    os.environ["LOCUST_RUN_ID"] = start_time.isoformat()
 
     if args.remote_master:
         logging.info("Some argument passing will not work with remote master (broken since 2.0)")
