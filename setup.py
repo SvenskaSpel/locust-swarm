@@ -32,8 +32,7 @@ class PostEggInfoCommand(egg_info):
 
 
 requirement_list = [
-    "keyring==21.4.0",
-    "psutil",
+    "keyring>=21.4.0",
     "ConfigArgParse>=1.7",
     "locust>=2.18.5.dev8",
 ]
