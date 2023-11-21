@@ -33,8 +33,7 @@ class PostEggInfoCommand(egg_info):
 
 requirement_list = [
     "keyring>=21.4.0",
-    "ConfigArgParse>=1.7",
-    "locust>=2.18.5.dev8",
+    "locust>=2.19.0",
 ]
 # if locust-plugins IS installed, then require a version known to work with this version of swarm.
 spec = importlib.util.find_spec("locust_plugins")
