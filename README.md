@@ -6,7 +6,7 @@
 
 Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers, using SSH.
 
-Swarm supports [locust-plugins](https://github.com/SvenskaSpel/locust-plugins), automatically installing it on load gens if available.
+It is intended to be run on your local Linux/MacOS machine and uses SSH tunnels to help work around any network/firewall issues that might otherwise prevent workers from sending data to the master.
 
 ## Installation
 
@@ -20,17 +20,7 @@ On the loadgens:
 
 ```
 pip install locust
-# if you want to use locust-plugins:
-# pip install locust-plugins 
-# as swarm automatically copies locust-plugins to loadgens every time, you can then uninstall it, leaving only its dependencies:
-# pip uninstall locust-plugins
 ```
-
-Swarm uses SSH to launch remote processes and SSH tunnels for communication, so you should ensure you can access the workers over ssh.
-
-## Other requirements
-
-Servers must be running bash v4.3 or later.
 
 ## Detailed help
 
@@ -161,6 +151,10 @@ I find the best way to view and analyze results is with [Locust Dashboards](http
 Here's a sequence diagram of how swarm works:
 
 ![Sequence diagram](swarm.png)
+
+## With Web UI
+
+Swarm uses `--headless` by default, but if you want to use the locust Web UI you can: just add the (somewhat secret) Locust parameter `--headful`.
 
 ## Contributions
 
