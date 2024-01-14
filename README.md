@@ -142,11 +142,13 @@ Percentage of the requests completed within given times
 2019-09-20:13:46:25,184 INFO [swarm:201] Load gen master process finished (return code 0)
 ```
 
+## With Web UI
+
 Swarm runs the locust master in headless mode by default, but you can set `--headful` if you still want to use the Locust web UI.
 
 I find the best way to view and analyze results is with [Locust Dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards), the Timescale/Grafana-based solution provided by [locust-plugins](https://github.com/SvenskaSpel/locust-plugins/).
 
-Here's a sequence diagram of how swarm works:
+## What does it do?
 
 ![Sequence diagram](swarm.png)
 
