@@ -53,7 +53,7 @@ options:
   --loadgen-list LOADGEN_LIST
                         A comma-separated list of ssh servers on which to launch locust workers
   --loadgens LOADGENS, -l LOADGENS
-                        Number of servers to run locust workers on
+                        Number of servers to run locust workers on. Defaults to -1, meaning all of them.
   --processes PROCESSES
                         This is passed on to locust unchanged and determines the number of worker processes per load generator.
   --selenium            Start selenium server on load gens for use with locust-plugins's WebdriverUser

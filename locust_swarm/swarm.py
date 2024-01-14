@@ -69,8 +69,8 @@ parser.add_argument(
     "--loadgens",
     "-l",
     type=int,
-    default=1,
-    help="Number of servers to run locust workers on",
+    default=-1,
+    help="Number of servers to run locust workers on. Defaults to -1, meaning all of them.",
 )
 parser.add_argument(
     "--processes-per-loadgen",
@@ -381,10 +381,10 @@ def main():
         parser.error(
             f"--processes-per-loadgen has been removed in favour of locusts native --processes parameter (you had it set to {args.processes_per_loadgen})"
         )
-    if args.loadgens < 1:
-        parser.error("loadgens parameter must be 1 or higher")
     worker_process_count = args.processes * args.loadgens
     loadgen_list = args.loadgen_list.split(",")
+    if args.loadgens < 0:
+        args.loadgens = len(loadgen_list)
 
     try:
         subprocess.check_output(
