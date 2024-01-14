@@ -4,7 +4,7 @@
 
 # Swarm
 
-Swarm is a tool for running [Locust](https://github.com/locustio/locust) in a distributed fashion, using [rsync](https://linux.die.net/man/1/rsync) and [ssh](https://linux.die.net/man/1/ssh) to automate file distribution and starting of Locust.
+Swarm is a script for automating distributed [Locust](https://github.com/locustio/locust) runs, using [rsync](https://linux.die.net/man/1/rsync) and [ssh](https://linux.die.net/man/1/ssh).
 
 It can be run on your local Linux/MacOS machine and uses SSH tunnels to help work around any network/firewall issues that might otherwise prevent workers from sending data to the master.
 
@@ -136,15 +136,15 @@ Percentage of the requests completed within given times
 2019-09-20:13:46:25,184 INFO [swarm:201] Load gen master process finished (return code 0)
 ```
 
-## With Web UI
+## How does it work?
+
+![Sequence diagram](swarm.png)
+
+## Web UI/visualization
 
 Swarm runs the locust master in headless mode by default, but you can set `--headful` if you still want to use the Locust web UI.
 
-I find the best way to view and analyze results is with [Locust Dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards), the Timescale/Grafana-based solution provided by [locust-plugins](https://github.com/SvenskaSpel/locust-plugins/).
-
-## What does it do?
-
-![Sequence diagram](swarm.png)
+Swarm works nicely with [Locust Dashboards](https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards), the Timescale/Grafana-based visualization solution provided by [locust-plugins](https://github.com/SvenskaSpel/locust-plugins/).
 
 ## Contributions
 
