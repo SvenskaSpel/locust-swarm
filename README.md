@@ -4,9 +4,9 @@
 
 # Swarm
 
-Swarm is a tool for running [locust](https://github.com/locustio/locust) in a distributed fashion on a set of load generator servers, using SSH.
+Swarm is a tool for running [Locust](https://github.com/locustio/locust) in a distributed fashion, using [rsync](https://linux.die.net/man/1/rsync) and [ssh](https://linux.die.net/man/1/ssh).
 
-It is intended to be run on your local Linux/MacOS machine and uses SSH tunnels to help work around any network/firewall issues that might otherwise prevent workers from sending data to the master.
+It can be run on your local Linux/MacOS machine and uses SSH tunnels to help work around any network/firewall issues that might otherwise prevent workers from sending data to the master.
 
 ## Installation
 
@@ -24,13 +24,9 @@ pip install locust
 
 ## Detailed help
 
-Run
+```
+~ swarm -h
 
-```
-swarm -h
-```
-
-```
 usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGENS] [--processes PROCESSES] [--selenium] [--playwright] [--test-env TEST_ENV] [--loglevel LOGLEVEL] [--port PORT] [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [EXTRA_FILES ...]] [--version]
 
 A tool for automating distributed locust runs using ssh.
@@ -70,7 +66,7 @@ Parameters specified on command line override env vars, which in turn override c
 This assumes you have env vars like LOADGEN_LIST etc set. Just try running it and you'll get feedback on what is missing.
 
 ```
-~/git/locust-swarm > swarm -t 10 -c 10 -f examples/locustfile.py -H https://example.com
+~ swarm -t 10 -c 10 -f examples/locustfile.py -H https://example.com
 [2019-09-20 13:46:09,726] lafp-mac-JG5J/INFO/root: Follow test run here: https://grafana/d/qjIIww4Zz/locust?orgId=1&var-testplan=example&from=1568979968805&to=now
 [2019-09-20 13:46:09,885] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
 [2019-09-20 13:46:10,889] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
