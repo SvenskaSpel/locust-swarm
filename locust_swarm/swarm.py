@@ -39,7 +39,7 @@ parser = configargparse.ArgumentParser(
     formatter_class=configargparse.RawDescriptionHelpFormatter,
     description="""A tool for automating distributed locust runs using ssh.
 
-Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --loadgens 2 --users 50""",
+Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --users 50""",
     epilog="""Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
     
 Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).

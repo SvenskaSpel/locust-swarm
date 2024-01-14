@@ -45,7 +45,7 @@ usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGE
 
 A tool for automating distributed locust runs using ssh.
 
-Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --loadgens 2 --users 50
+Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --users 50
 
 options:
   -h, --help            show this help message and exit
@@ -77,10 +77,10 @@ Parameters specified on command line override env vars, which in turn override c
 
 ## Example run
 
-This assumes you have env vars like LOADGEN_LIST etc set. Just try running swarm and you'll get feedback on what is missing.
+This assumes you have env vars like LOADGEN_LIST etc set. Just try running it and you'll get feedback on what is missing.
 
 ```
-~/git/locust-swarm > swarm -t 10 -c 10  --loadgens 1 --processes-per-loadgen 2 -f examples/locustfile.py -H https://example.com
+~/git/locust-swarm > swarm -t 10 -c 10 -f examples/locustfile.py -H https://example.com
 [2019-09-20 13:46:09,726] lafp-mac-JG5J/INFO/root: Follow test run here: https://grafana/d/qjIIww4Zz/locust?orgId=1&var-testplan=example&from=1568979968805&to=now
 [2019-09-20 13:46:09,885] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
 [2019-09-20 13:46:10,889] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
