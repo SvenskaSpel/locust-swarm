@@ -4,9 +4,11 @@
 
 # Swarm
 
-Swarm is a tool for running [Locust](https://github.com/locustio/locust) in a distributed fashion, using [rsync](https://linux.die.net/man/1/rsync) and [ssh](https://linux.die.net/man/1/ssh).
+Swarm is a tool for running [Locust](https://github.com/locustio/locust) in a distributed fashion, using [rsync](https://linux.die.net/man/1/rsync) and [ssh](https://linux.die.net/man/1/ssh) to automate file distribution and starting of Locust.
 
 It can be run on your local Linux/MacOS machine and uses SSH tunnels to help work around any network/firewall issues that might otherwise prevent workers from sending data to the master.
+
+It also implements a locking system that prevents multiple users from launching load tests on the same load generators at the same time, which is useful if you have a shared set of load generators.
 
 ## Installation
 
