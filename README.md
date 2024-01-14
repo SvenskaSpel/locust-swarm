@@ -150,10 +150,6 @@ Here's a sequence diagram of how swarm works:
 
 ![Sequence diagram](swarm.png)
 
-## With Web UI
-
-Swarm uses `--headless` by default, but if you want to use the locust Web UI you can: just add the (somewhat secret) Locust parameter `--headful`.
-
 ## Contributions
 
 Contributions are very welcome! 😁
