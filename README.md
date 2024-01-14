@@ -24,11 +24,9 @@ On the loadgens:
 pip install locust
 ```
 
-## Detailed help
+## Usage
 
 ```
-~ swarm -h
-
 usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGENS] [--processes PROCESSES] [--selenium] [--playwright] [--test-env TEST_ENV] [--loglevel LOGLEVEL] [--port PORT] [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [EXTRA_FILES ...]] [--version]
 
 A tool for automating distributed locust runs using ssh.
@@ -65,11 +63,8 @@ Parameters specified on command line override env vars, which in turn override c
 
 ## Example run
 
-This assumes you have env vars like LOADGEN_LIST etc set. Just try running it and you'll get feedback on what is missing.
-
 ```
-~ swarm -t 10 -c 10 -f examples/locustfile.py -H https://example.com
-[2019-09-20 13:46:09,726] lafp-mac-JG5J/INFO/root: Follow test run here: https://grafana/d/qjIIww4Zz/locust?orgId=1&var-testplan=example&from=1568979968805&to=now
+~ swarm --loadgen-list perftest03 -t 10 -c 10 -f examples/locustfile.py -H https://example.com
 [2019-09-20 13:46:09,885] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
 [2019-09-20 13:46:10,889] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
 [2019-09-20 13:46:11,891] lafp-mac-JG5J/INFO/root: Waiting for workers to be ready, 0 of 2 connected
@@ -124,7 +119,6 @@ This assumes you have env vars like LOADGEN_LIST etc set. Just try running it an
 [2019-09-20 13:46:23,406] lafp-mac-JG5J/INFO/locust.main: Shutting down (exit code 0), bye.
 [2019-09-20 13:46:23,407] lafp-mac-JG5J/INFO/locust.main: Cleaning up runner...
 [2019-09-20 13:46:23,911] lafp-mac-JG5J/INFO/locust.main: Running teardowns...
-[2019-09-20 13:46:25,093] lafp-mac-JG5J/INFO/root: Report: https://grafana/d/qjIIww4Zz/locust?orgId=1&var-testplan=example&from=1568979968805&to=1568979985806
 
  Name                                                          # reqs      # fails     Avg     Min     Max  |  Median   req/s
 --------------------------------------------------------------------------------------------------------------------------------------------
