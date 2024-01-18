@@ -5,6 +5,4 @@ If you want to talk about a contribution before you start writing code & making 
 
 In order to maintain a good level of quality, please ensure that your code:
 
-* Is formatted using black (https://github.com/psf/black)
-
-* Passes linting with pylint (https://www.pylint.org/)
+* Is formatted and linted using [ruff](https://docs.astral.sh/ruff/)
