@@ -1,5 +1,5 @@
 try:
-    import svs_locust  # pylint: disable=import-outside-toplevel
+    import svs_locust
 except ModuleNotFoundError:
     # svs-locust is a library that is only used internally at Svenska Spel, please ignore it
     # We need to import it here to get some variables and the path to the installed package
@@ -15,7 +15,6 @@ import socket
 from datetime import datetime, timezone
 import psutil
 import configargparse
-import locust_plugins
 import locust.util.timespan
 from locust_swarm._version import version
 
@@ -190,7 +189,7 @@ def check_output_multiple(list_of_commands):
         for process in running_procs:
             retcode = process.poll()
             if retcode is not None:  # Process finished.
-                running_procs.remove(process)  #  pylint: disable=modified-iterating-list
+                running_procs.remove(process)
                 if retcode != 0:
                     raise Exception(f"Bad return code {retcode} from command: {process.args}")
                 break
@@ -251,11 +250,16 @@ def cleanup(server_list):
 def upload(server):
     files = [args.locustfile or "locustfile.py"] + args.extra_files
     if not args.skip_plugins:
-        files.append(os.path.dirname(locust_plugins.__file__))
         try:
-            files.append(os.path.dirname(svs_locust.__file__))
-        except NameError:
-            pass
+            import locust_plugins
+
+            files.append(os.path.dirname(locust_plugins.__file__))
+            try:
+                files.append(os.path.dirname(svs_locust.__file__))
+            except NameError:
+                pass
+        except ImportError:
+            pass  # locust-plugins wasnt installed
     if len(files) > 1:
         filestr = "{" + ",".join(files) + "}"
     else:
@@ -371,7 +375,7 @@ def main():
     locustfile = args.locustfile or "locustfile.py"
 
     if "/" in locustfile:
-        parser.error(  #  pylint: disable=not-callable
+        parser.error(
             "Locustfile (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
         )
 
@@ -523,7 +527,7 @@ def main():
             if max_run_time + args.exit_timeout < time.time() - start_time:
                 logging.error(
                     f"Locust exceeded the run time specified ({max_run_time}) by more than 30 seconds, giving up"
-                )  #  pylint: disable=raise-missing-from
+                )
                 master_proc.send_signal(1)
         except KeyboardInterrupt:
             pass

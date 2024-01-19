@@ -1,5 +1,4 @@
 {
-    "python.formatting.provider": "black",
     "files.exclude": {
         "**/env": true,
         "**/__pycache__": true,
@@ -12,14 +11,13 @@
         "**/_version.py": true,
         "**/.eggs": true
     },
-    "python.linting.pylintEnabled": true,
     "files.watcherExclude": {
         "**/target": true
     },
     "editor.formatOnSave": true,
     "[python]": {
         "editor.formatOnPaste": false,
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "python.languageServer": "Pylance",
     "python.analysis.typeCheckingMode": "basic",
