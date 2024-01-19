@@ -1,3 +1,9 @@
+try:
+    import svs_locust
+except ModuleNotFoundError:
+    # svs-locust is a library that is only used internally at Svenska Spel, please ignore it
+    # We need to import it here to get some variables and the path to the installed package
+    pass
 import atexit
 import logging
 import os
@@ -245,21 +251,16 @@ def upload(server):
     files = [args.locustfile or "locustfile.py"] + args.extra_files
     if not args.skip_plugins:
         try:
+            files.append(os.path.dirname(svs_locust.__file__))
+        except NameError:
+            pass
+
+        try:
             import locust_plugins
 
             files.append(os.path.dirname(locust_plugins.__file__))
         except ModuleNotFoundError:
-            logging.debug("locust-plugins wasnt installed")
-
-        try:
-            # svs-locust is a library that is only used internally at Svenska Spel, please ignore it
-
-            import svs_locust
-
-            files.append(os.path.dirname(svs_locust.__file__))
-        except ModuleNotFoundError:
-            pass
-
+            logging.debug("locust-plugins wasnt installed, not adding it to files to upload")
     if len(files) > 1:
         filestr = "{" + ",".join(files) + "}"
     else:
