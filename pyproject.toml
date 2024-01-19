@@ -1,2 +1,30 @@
 [tool.ruff]
 line-length = 120
+
+extend-select = [
+    "D419", # empty-docstring
+    # "E501",    # line-too-long
+    "W291",    # trailing-whitespace
+    "PLC0414", # useless-import-alias
+    "PLC2401", # non-ascii-name
+    "PLC3002", # unnecessary-direct-lambda-call
+    "E999",    # syntax-error
+    "PLE0101", # return-in-init
+    "F706",    # return-outside-function
+    "F704",    # yield-outside-function
+    "PLE0116", # continue-in-finally
+    "PLE0117", # nonlocal-without-binding
+    "PLE0241", # duplicate-bases
+    "PLE0302", # unexpected-special-method-signature
+    "PLE0604", # invalid-all-object
+    "PLE0605", # invalid-all-format
+    "PLE0704", # misplaced-bare-raise
+]
+
+ignore = [
+    "PLR0912", # too-many-branches
+    "PLR0913", # too-many-arguments
+    "PLR0914", # too-many-locals
+    "PLR0915", # too-many-statements
+    "PLW0603", # global-statement
+]
