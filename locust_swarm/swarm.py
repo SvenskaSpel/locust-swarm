@@ -15,7 +15,6 @@ import socket
 from datetime import datetime, timezone
 import psutil
 import configargparse
-import locust_plugins
 import locust.util.timespan
 from locust_swarm._version import version
 
@@ -251,11 +250,16 @@ def cleanup(server_list):
 def upload(server):
     files = [args.locustfile or "locustfile.py"] + args.extra_files
     if not args.skip_plugins:
-        files.append(os.path.dirname(locust_plugins.__file__))
         try:
-            files.append(os.path.dirname(svs_locust.__file__))
-        except NameError:
-            pass
+            import locust_plugins
+
+            files.append(os.path.dirname(locust_plugins.__file__))
+            try:
+                files.append(os.path.dirname(svs_locust.__file__))
+            except NameError:
+                pass
+        except ImportError:
+            pass  # locust-plugins wasnt installed
     if len(files) > 1:
         filestr = "{" + ",".join(files) + "}"
     else:
