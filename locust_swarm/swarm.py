@@ -7,17 +7,18 @@ except ModuleNotFoundError:
 import atexit
 import logging
 import os
-import subprocess
 import signal
+import socket
+import subprocess
 import sys
 import time
-import socket
 from datetime import datetime, timezone
-import psutil
+
 import configargparse
 import locust.util.timespan
-from locust_swarm._version import version
+import psutil
 
+from locust_swarm._version import version
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
