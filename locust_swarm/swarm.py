@@ -143,11 +143,17 @@ parser.add_argument(
     default=[],
     help="A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv *.py my-directory/",
 )
-parser.add_argument(  # secret parameter to optimize by not uploading locust-plugins every time
+parser.add_argument(
     "--skip-plugins",
     action="store_true",
     default=False,
     help=configargparse.SUPPRESS,
+)
+parser.add_argument(
+    "--upload-plugins",
+    action="store_true",
+    default=False,
+    help="Upload locust-plugins to load gens (useful if you are developing locust-plugins)",
 )
 
 parser.add_argument(
@@ -248,8 +254,8 @@ def cleanup(server_list):
 
 
 def upload(server):
-    files = [args.locustfile or "locustfile.py"] + args.extra_files
-    if not args.skip_plugins:
+    files = args.extra_files.copy()
+    if args.upload_plugins:
         try:
             files.append(os.path.dirname(svs_locust.__file__))
         except NameError:
@@ -260,7 +266,12 @@ def upload(server):
 
             files.append(os.path.dirname(locust_plugins.__file__))
         except ModuleNotFoundError:
-            logging.debug("locust-plugins wasnt installed, not adding it to files to upload")
+            logging.error("locust-plugins wasnt installed")
+            sys.exit(1)
+
+    if not files:
+        return
+
     if len(files) > 1:
         filestr = "{" + ",".join(files) + "}"
     else:
@@ -272,7 +283,7 @@ def upload(server):
         check_output(f"rsync -qrtl --exclude __pycache__ --exclude .mypy_cache {filestr} {server}:")
 
 
-def start_worker_process(server, port, locustfile_filename):
+def start_worker_process(server, port):
     upload(server)
 
     if args.selenium:
@@ -344,7 +355,7 @@ def start_worker_process(server, port, locustfile_filename):
             "--expect-workers-max-wait",
             "30",
             "-f",
-            locustfile_filename,
+            "-",
             *ensure_remote_kill,
             "'",
         ]
@@ -375,16 +386,14 @@ def main():
 
     locustfile = args.locustfile or "locustfile.py"
 
-    if "/" in locustfile:
-        parser.error(
-            "Locustfile (-f) must be a file in the current directory (I'm lazy and havent fixed support for this yet)"
-        )
-
-    locustfile_filename = os.path.split(locustfile)[1]
     port = int(args.port)
     if args.processes_per_loadgen:
         parser.error(
             f"--processes-per-loadgen has been removed in favour of locusts native --processes parameter (you had it set to {args.processes_per_loadgen})"
+        )
+    if args.skip_plugins:
+        parser.error(
+            "--skip-plugins has been removed, the default is now NOT to upload plugins (but you can enable it with --upload-plugins)"
         )
     worker_process_count = args.processes * args.loadgens
     loadgen_list = args.loadgen_list.split(",")
@@ -503,7 +512,7 @@ def main():
     for server in server_list:
         # fail early if master has already terminated
         check_proc_running(master_proc)
-        worker_procs.extend(start_worker_process(server, port, locustfile_filename))
+        worker_procs.extend(start_worker_process(server, port))
 
     # check that worker procs didnt immediately terminate for some reason (like invalid parameters)
     try:
