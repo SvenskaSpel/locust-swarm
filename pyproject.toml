@@ -1,9 +1,8 @@
 [tool.ruff]
 line-length = 120
-select = ["E", "F", "W", "UP", "FA102", "I001"]
-extend-select = [
+lint.select = ["E", "F", "W", "UP", "FA102", "I"]
+lint.extend-select = [
     "D419", # empty-docstring
-    # "E501",    # line-too-long
     "W291",    # trailing-whitespace
     "PLC0414", # useless-import-alias
     "PLC2401", # non-ascii-name
@@ -20,13 +19,13 @@ extend-select = [
     "PLE0605", # invalid-all-format
     "PLE0704", # misplaced-bare-raise
 ]
-
-ignore = [
+lint.ignore = [
     "PLR0912", # too-many-branches
     "PLR0913", # too-many-arguments
     "PLR0914", # too-many-locals
     "PLR0915", # too-many-statements
     "PLW0603", # global-statement
+    "E501",    # line-too-long
 ]
 
 [tool.mypy]
