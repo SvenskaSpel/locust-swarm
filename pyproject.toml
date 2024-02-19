@@ -28,3 +28,6 @@ ignore = [
     "PLR0915", # too-many-statements
     "PLW0603", # global-statement
 ]
+
+[tool.mypy]
+ignore_missing_imports = true
