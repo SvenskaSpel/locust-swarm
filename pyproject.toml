@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 120
-
+select = ["E", "F", "W", "UP", "FA102", "I001"]
 extend-select = [
     "D419", # empty-docstring
     # "E501",    # line-too-long
