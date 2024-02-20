@@ -7,17 +7,18 @@ except ModuleNotFoundError:
 import atexit
 import logging
 import os
-import subprocess
 import signal
+import socket
+import subprocess
 import sys
 import time
-import socket
 from datetime import datetime, timezone
-import psutil
+
 import configargparse
 import locust.util.timespan
-from locust_swarm._version import version
+import psutil
 
+from locust_swarm._version import version
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -40,7 +41,7 @@ parser = configargparse.ArgumentParser(
 
 Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --users 50""",
     epilog="""Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
-    
+
 Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
 Parameters specified on command line override env vars, which in turn override config files.""",
     add_config_file_help=False,
@@ -317,7 +318,7 @@ def start_worker_process(server, port):
             "-R",
             f"{port}:localhost:{port}",
             "-R",
-            f"{port+1}:localhost:{port+1}",
+            f"{port + 1}:localhost:{port + 1}",
         ]
         ensure_remote_kill = ["& read; kill -9 $!"]
         nohup = []
@@ -335,31 +336,29 @@ def start_worker_process(server, port):
     if args.test_env:
         extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
 
-    cmd = " ".join(
-        [
-            "ssh",
-            "-q",
-            *port_forwarding_parameters,
-            server,
-            "'",
-            *extra_env,
-            *nohup,
-            "locust",
-            "--worker",
-            "--processes",
-            str(args.processes),
-            "--master-port",
-            str(port),
-            *master_parameters,
-            "--headless",
-            "--expect-workers-max-wait",
-            "30",
-            "-f",
-            "-",
-            *ensure_remote_kill,
-            "'",
-        ]
-    )
+    cmd = " ".join([
+        "ssh",
+        "-q",
+        *port_forwarding_parameters,
+        server,
+        "'",
+        *extra_env,
+        *nohup,
+        "locust",
+        "--worker",
+        "--processes",
+        str(args.processes),
+        "--master-port",
+        str(port),
+        *master_parameters,
+        "--headless",
+        "--expect-workers-max-wait",
+        "30",
+        "-f",
+        "-",
+        *ensure_remote_kill,
+        "'",
+    ])
 
     logging.info("workers started " + cmd)
     procs.append(
