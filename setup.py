@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-
-import importlib.util
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 from setuptools.command.egg_info import egg_info
@@ -30,12 +28,6 @@ class PostEggInfoCommand(egg_info):
     def run(self):
         install_check(self, egg_info)
 
-
-requirement_list = ["locust>=2.19.0"]
-# if locust-plugins IS installed, then require a version known to work with this version of swarm.
-spec = importlib.util.find_spec("locust_plugins")
-if spec is not None:
-    requirement_list.append("locust-plugins>=2.7.0")
 
 setup(
     name="locust-swarm",
@@ -65,7 +57,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=requirement_list,
+    install_requires=["locust>=2.23.0"],
     entry_points={
         "console_scripts": ["swarm = locust_swarm.swarm:main"],
     },
