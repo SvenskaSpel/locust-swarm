@@ -32,6 +32,7 @@ parser = configargparse.ArgumentParser(
     default_config_files=[
         "~/.locust.conf",
         "locust.conf",
+        "pyproject.toml",
         "~/.swarm.conf",
         "swarm.conf",
     ],
