@@ -42,7 +42,7 @@ parser = configargparse.ArgumentParser(
 Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --users 50""",
     epilog="""Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
 
-Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
+Swarm config can also be set using config file (~/.locust.conf, locust.conf, pyproject.toml, ~/.swarm.conf or swarm.conf).
 Parameters specified on command line override env vars, which in turn override config files.""",
     add_config_file_help=False,
     add_env_var_help=False,

@@ -27,7 +27,8 @@ pip install locust
 ## Usage
 
 ```
-usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGENS] [--processes PROCESSES] [--selenium] [--playwright] [--test-env TEST_ENV] [--loglevel LOGLEVEL] [--port PORT] [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [EXTRA_FILES ...]] [--version]
+usage: swarm [-h] [-f LOCUSTFILE] --loadgen-list LOADGEN_LIST [--loadgens LOADGENS] [--processes PROCESSES] [--selenium] [--playwright] [--test-env TEST_ENV] [--loglevel LOGLEVEL]
+             [--port PORT] [--remote-master REMOTE_MASTER] [--extra-files EXTRA_FILES [EXTRA_FILES ...]] [--upload-plugins] [--version]
 
 A tool for automating distributed locust runs using ssh.
 
@@ -49,14 +50,16 @@ options:
                         Use DEBUG for tracing issues with load gens etc
   --port PORT
   --remote-master REMOTE_MASTER
-                        An ssh server to use as locust master (default is to run the master locally). This is useful to prevent interrupting the load test if your workstation gets disconnected/goes to sleep.
+                        An ssh server to use as locust master (default is to run the master locally). This is useful to prevent interrupting the load test if your workstation gets
+                        disconnected/goes to sleep.
   --extra-files EXTRA_FILES [EXTRA_FILES ...]
                         A list of extra files or directories to upload. Space-separated, e.g. --extra-files testdata.csv *.py my-directory/
+  --upload-plugins      Upload locust-plugins to load gens (useful if you are developing locust-plugins)
   --version, -V         Show program's version number and exit
 
 Any parameters not listed here are forwarded to locust master unmodified, so go ahead and use things like --users, --host, --run-time, ...
 
-Swarm config can also be set using config file (~/.locust.conf, locust.conf, ~/.swarm.conf or swarm.conf).
+Swarm config can also be set using config file (~/.locust.conf, locust.conf, pyproject.toml, ~/.swarm.conf or swarm.conf).
 Parameters specified on command line override env vars, which in turn override config files.
 ```
 
