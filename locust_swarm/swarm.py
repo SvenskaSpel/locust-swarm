@@ -12,6 +12,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections import OrderedDict
 from datetime import datetime, timezone
 
 import configargparse
@@ -19,6 +20,37 @@ import locust.util.timespan
 import psutil
 
 from locust_swarm._version import version
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+
+class LocustTomlConfigParser(configargparse.TomlConfigParser):
+    def parse(self, stream):
+        try:
+            config = tomllib.loads(stream.read())
+        except Exception as e:
+            raise configargparse.ConfigFileParserException(f"Couldn't parse TOML file: {e}")
+
+        # convert to dict and filter based on section names
+        result = OrderedDict()
+
+        for section in self.sections:
+            data = configargparse.get_toml_section(config, section)
+            if data:
+                for key, value in data.items():
+                    if isinstance(value, list):
+                        result[key] = value
+                    elif value is None:
+                        pass
+                    else:
+                        result[key] = str(value)
+                break
+
+        return result
+
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d] %(message)s",
@@ -38,6 +70,10 @@ parser = configargparse.ArgumentParser(
     ],
     auto_env_var_prefix="LOCUST_",
     formatter_class=configargparse.RawDescriptionHelpFormatter,
+    config_file_parser_class=configargparse.CompositeConfigParser([
+        LocustTomlConfigParser(["tool.locust"]),
+        configargparse.DefaultConfigFileParser,
+    ]),
     description="""A tool for automating distributed locust runs using ssh.
 
 Example: swarm -f test.py --loadgen-list loadgen1.domain.com,loadgen2.domain.com --users 50""",
