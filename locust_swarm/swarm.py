@@ -431,10 +431,10 @@ def main():
         parser.error(
             "--skip-plugins has been removed, the default is now NOT to upload plugins (but you can enable it with --upload-plugins)"
         )
-    worker_process_count = args.processes * args.loadgens
     loadgen_list = args.loadgen_list.split(",")
     if args.loadgens < 0:
         args.loadgens = len(loadgen_list)
+    worker_process_count = args.processes * args.loadgens
 
     try:
         subprocess.check_output(
