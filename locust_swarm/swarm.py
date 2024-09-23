@@ -193,6 +193,12 @@ parser.add_argument(
     default=False,
     help="Upload locust-plugins to load gens (useful if you are developing locust-plugins)",
 )
+parser.add_argument(
+    "--timescale",
+    action="store_true",
+    default=False,
+    help="Explicitly enable timescale plugin on master/workers nodes",
+)
 
 parser.add_argument(
     "--version",
@@ -373,6 +379,12 @@ def start_worker_process(server, port):
     if args.test_env:
         extra_env.append("LOCUST_TEST_ENV=" + args.test_env)
 
+    timescale_args = []
+    if args.timescale:
+        timescale_args = [
+            "--timescale",
+        ]
+
     cmd = " ".join([
         "ssh",
         "-q",
@@ -388,6 +400,7 @@ def start_worker_process(server, port):
         "--master-port",
         str(port),
         *master_parameters,
+        *timescale_args,
         "--headless",
         "--expect-workers-max-wait",
         "30",
@@ -520,6 +533,12 @@ def main():
     if args.playwright:
         extra_env.append("LOCUST_PLAYWRIGHT=1")
 
+    timescale_args = []
+    if args.timescale:
+        timescale_args = [
+            "--timescale",
+        ]
+
     master_command = [
         *ssh_command,
         *extra_env,
@@ -532,6 +551,7 @@ def main():
         str(worker_process_count),
         "--expect-workers-max-wait",
         "60",
+        *timescale_args,
         "--headless",
         "-f",
         locustfile,
