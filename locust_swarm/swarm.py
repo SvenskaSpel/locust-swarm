@@ -193,6 +193,7 @@ parser.add_argument(
     default=False,
     help="Upload locust-plugins to load gens (useful if you are developing locust-plugins)",
 )
+parser.add_argument("--ssh-port", type=int, help="Port to use with SSH.")
 
 parser.add_argument(
     "--version",
@@ -204,6 +205,12 @@ parser.add_argument(
 
 args, unrecognized_args = parser.parse_known_args()
 master_proc = None
+ssh_port_args = []
+if args.ssh_port:
+    ssh_port_args = [
+        "-p",
+        str(args.ssh_port),
+    ]
 
 
 def is_port_in_use(portno: int):
@@ -252,7 +259,7 @@ def check_and_lock_server(server):
     # a server is considered busy if it is either running a locust process or
     # is "locked" by a sleep command with somewhat unique syntax.
     # the regex uses a character class ([.]) to avoid matching with the pgrep command itself
-    check_command = f"ssh -o LogLevel=error {server} \"pgrep -f '^sleep 1 19|[l]ocust --worker' && echo busy || (echo available && sleep 1 19)\""
+    check_command = f"ssh {' '.join(ssh_port_args)} -o LogLevel=error {server} \"pgrep -f '^sleep 1 19|[l]ocust --worker' && echo busy || (echo available && sleep 1 19)\""
 
     logging.debug(check_command)
     p = subprocess.Popen(check_command, stdout=subprocess.PIPE, shell=True)
@@ -285,7 +292,7 @@ def cleanup(server_list):
             pass
     psutil.wait_procs(procs, timeout=3)
     check_output_multiple(
-        f"ssh -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' 2>&1 | grep -v 'No such process' || true"
+        f"ssh {' '.join(ssh_port_args)} -q {server} 'pkill -9 -u $USER -f \"locust --worker\"' 2>&1 | grep -v 'No such process' || true"
         for server in server_list
     )
     logging.debug("cleanup complete")
@@ -325,8 +332,8 @@ def start_worker_process(server, port):
     upload(server)
 
     if args.selenium:
-        check_output(f"ssh -q {server} 'rm -rf /tmp/.com.google.Chrome.*' || true")
-        selenium_cmd = f"ssh -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.0.0.jar standalone > selenium.log 2>&1' &"
+        check_output(f"ssh {' '.join(ssh_port_args)} -q {server} 'rm -rf /tmp/.com.google.Chrome.*' || true")
+        selenium_cmd = f"ssh {' '.join(ssh_port_args)} -q {server} 'pkill -f \"^java -jar selenium-server-4.\"; java -jar selenium-server-4.0.0.jar standalone > selenium.log 2>&1' &"
         logging.info(selenium_cmd)
         subprocess.Popen(
             selenium_cmd,
@@ -337,12 +344,12 @@ def start_worker_process(server, port):
         )
         time.sleep(0.2)
         check_output(
-            f"ssh -q {server} 'pgrep -f \"^java -jar selenium-server-4.\"' # check to see selenium actually launched"
+            f"ssh {' '.join(ssh_port_args)} -q {server} 'pgrep -f \"^java -jar selenium-server-4.\"' # check to see selenium actually launched"
         )
         time.sleep(1)
 
     if args.playwright:
-        check_output(f"ssh -q {server} 'rm -rf tmp/* && pkill playwright.sh || true'")
+        check_output(f"ssh {' '.join(ssh_port_args)} -q {server} 'rm -rf tmp/* && pkill playwright.sh || true'")
 
     if args.remote_master:
         port_forwarding_parameters = []
@@ -375,6 +382,7 @@ def start_worker_process(server, port):
 
     cmd = " ".join([
         "ssh",
+        *ssh_port_args,
         "-q",
         *port_forwarding_parameters,
         server,
@@ -437,8 +445,9 @@ def main():
     worker_process_count = args.processes * args.loadgens
 
     try:
+        print(f"ssh {' '.join(ssh_port_args)} -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1")
         subprocess.check_output(
-            f"ssh -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1",
+            f"ssh {' '.join(ssh_port_args)} -o LogLevel=error -o BatchMode=yes {loadgen_list[0]} true 2>&1",
             shell=True,
             timeout=10,
         )
@@ -447,7 +456,7 @@ def main():
             # add all loadgens to known hosts
             for loadgen in loadgen_list:
                 subprocess.check_output(
-                    f"ssh -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true",
+                    f"ssh {' '.join(ssh_port_args)} -o LogLevel=error -o BatchMode=yes -o StrictHostKeyChecking=accept-new {loadgen} true",
                     shell=True,
                 )
         else:
@@ -492,10 +501,10 @@ def main():
         env_vars = ["PYTHONUNBUFFERED=1"]
         if args.test_env:
             env_vars.append("LOCUST_TEST_ENV=" + args.test_env)
-        ssh_command = ["ssh", "-q", args.remote_master, "'", *env_vars, "sudo", "-E", "nohup"]
+        ssh_command = ["ssh", *ssh_port_args, "-q", args.remote_master, "'", *env_vars, "sudo", "-E", "nohup"]
         bind_only_localhost = []
         ssh_command_end = ["'"]
-        check_output(f"ssh -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
+        check_output(f"ssh {' '.join(ssh_port_args)} -q {args.remote_master} 'pkill -9 -u $USER locust' || true")
         upload(args.remote_master)
     else:
         # avoid firewall popups by only binding localhost if running local master (ssh port forwarding):
